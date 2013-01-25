@@ -1,0 +1,50 @@
+# Compiled source #
+###################
+*.o
+*.so
+*.a
+*.la
+
+# Packages #
+############
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+*.db
+
+# Saves and backups #
+#####################
+*~
+*.bak
+*.back
+*.save
+*.old
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+
+
+# IDE, construct and related #
+##############################
+/m4/
+*.anjuta
+*.project
