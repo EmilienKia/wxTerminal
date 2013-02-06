@@ -28,6 +28,50 @@
 
 #include "terminal-ctrl.hpp"
 
+//
+//
+// wxConsoleContent
+//
+//
+
+void wxConsoleContent::setChar(wxPoint pos, wxChar c, unsigned char fore, unsigned char back, unsigned char style)
+{
+	wxTerminalCharacter ch;
+	ch.c     = c;
+	ch.fore  = fore;
+	ch.back  = back;
+	ch.style = style;
+	setChar(pos, ch);
+}
+
+
+void wxConsoleContent::setChar(wxPoint pos, wxTerminalCharacter c)
+{
+	ensureHasChar(pos.y, pos.x);
+	at(pos.y)[pos.x] = c;
+}
+
+void wxConsoleContent::addNewLine()
+{
+	push_back(wxTerminalLine());
+}
+
+void wxConsoleContent::ensureHasLine(size_t l)
+{
+	if(size()<=l)
+		resize(l+1);
+}
+
+void wxConsoleContent::ensureHasChar(size_t l, size_t c)
+{
+	ensureHasLine(l);
+	
+	wxTerminalLine& line = at(l);
+
+	if(line.size()<=c)
+		line.resize(c+1);
+}
+
 
 //
 //
@@ -119,46 +163,6 @@ void wxTerminalContent::append(const wxTerminalCharacter& c)
 	if(!isLineInfinite() && front().size()>=getMaxLineSize())
 		addNewLine();
 	back().push_back(c);
-}
-
-void wxTerminalContent::registerListener(wxTerminalContentListener* listener)
-{
-	m_listeners.insert(listener);
-}
-
-void wxTerminalContent::unregisterListener(wxTerminalContentListener* listener)
-{
-	m_listeners.erase(listener);
-	if(m_listeners.size()==0 && deleteOnNoListener())
-		delete this;
-}
-
-
-
-//
-//
-// wxTerminalContentListener
-//
-//
-
-wxTerminalContentListener::wxTerminalContentListener(wxTerminalContent* content):
-m_content(NULL)
-{
-	setContent(content);
-}
-
-wxTerminalContentListener::~wxTerminalContentListener()
-{
-	setContent(NULL);
-}
-
-void wxTerminalContentListener::setContent(wxTerminalContent* content)
-{
-	if(m_content!=NULL)
-		m_content->unregisterListener(this);
-	m_content = content;
-	if(m_content!=NULL)
-		m_content->registerListener(this);
 }
 
 
@@ -1264,14 +1268,20 @@ wxTerminalCtrl::wxTerminalCtrl(wxWindow *parent, wxWindowID id, const wxPoint &p
     const wxSize &size, long style, const wxString &name):
 wxScrolledCanvas(parent, id, pos, size, style, name),
 m_inputStream(NULL),
-m_outputStream(NULL)
+m_outputStream(NULL),
+m_historicContent(NULL),
+m_staticContent(NULL),
+m_currentContent(NULL)
 {
 	CommonInit();
 }
 
 wxTerminalCtrl::wxTerminalCtrl():
 m_inputStream(NULL),
-m_outputStream(NULL)
+m_outputStream(NULL),
+m_historicContent(NULL),
+m_staticContent(NULL),
+m_currentContent(NULL)
 {
 }
 
@@ -1290,8 +1300,12 @@ bool wxTerminalCtrl::Create(wxWindow *parent, wxWindowID id, const wxPoint &pos,
 
 void wxTerminalCtrl::CommonInit()
 {
-	setContent(new wxTerminalContent);
-	getContent()->deleteOnNoListener(true);
+	m_historicContent = new wxConsoleContent;
+	m_staticContent = new wxConsoleContent;
+
+	// Set historic content as current (default behavior)
+	m_currentContent = m_historicContent;
+	m_isHistoric = true;
 
 	m_colours[0]  = wxColour(0, 0, 0); // Normal black
 	m_colours[1]  = wxColour(255, 85, 85); // Bright red
@@ -1329,7 +1343,6 @@ void wxTerminalCtrl::CommonInit()
 	m_lastForeColor = 7;
 	m_lastStyle     = wxTCS_Normal;
 
-	m_inputState = 0;
 	
 	EnableScrolling(false, false);
 	UpdateScrollBars();
@@ -1373,7 +1386,7 @@ void wxTerminalCtrl::MoveCaret(int x, int y)
 		while(m_caretPos.x<0)
 		{
 			m_caretPos.y -= 1;
-			m_caretPos.x += getContent()->at(m_caretPos.y + GetScrollPos(wxVERTICAL)).size()-1;
+			m_caretPos.x += m_currentContent->at(m_caretPos.y + GetScrollPos(wxVERTICAL)).size()-1;
 		}
 	}
 	// TODO else {}
@@ -1414,7 +1427,7 @@ void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 	
 	wxPoint scroll(0, GetScrollPos(wxVERTICAL));
 	
-	wxTerminalContent* content = getContent();
+	wxConsoleContent* content = m_currentContent;
 	if(content)
 	{
 		for(size_t n=0, l=GetScrollPos(wxVERTICAL); n<clchSz.y && l<content->size(); n++, l++)
@@ -1483,9 +1496,9 @@ void wxTerminalCtrl::OnSize(wxSizeEvent& event)
 
 void wxTerminalCtrl::UpdateScrollBars()
 {
-	wxTerminalContent* content = getContent();
+	wxConsoleContent* content = m_currentContent;
 	wxSize charSz = GetCharSize();
-	wxSize globalSize(0, content?content->getLineCount():0);
+	wxSize globalSize(0, content?content->size():0);
 	SetScrollRate(charSz.x, charSz.y);
 	SetVirtualSize(0, globalSize.y*charSz.y);
 }
@@ -1562,7 +1575,7 @@ void wxTerminalCtrl::OnChar(wxKeyEvent& event)
 
 void wxTerminalCtrl::SetChar(wxChar c)
 {
-	wxTerminalContent* content = getContent();
+	wxConsoleContent* content = m_currentContent;
 	if(!content)
 		return;
 
@@ -1690,7 +1703,7 @@ void wxTerminalCtrl::onED(unsigned short opt) // Clears part of the screen.
 void wxTerminalCtrl::onEL(unsigned short opt) // Erases part of the line.
 {
 	wxPoint pos = GetCaretPosInBuffer();
-	wxTerminalLine& line = getContent()->at(pos.y);
+	wxTerminalLine& line = m_currentContent->at(pos.y);
 	if(opt==0) // Clear caret and after
 		line.erase(line.begin()+pos.x, line.end());
 	else if(opt==1) // Clear caret and before

@@ -28,7 +28,6 @@ extern wxString wxTerminalCtrlNameStr;
 
 struct wxTerminalCharacter;
 class wxTerminalContent;
-class wxTerminalContentListener;
 class wxTerminalCtrl;
 
 
@@ -57,6 +56,45 @@ struct wxTerminalCharacter
 
 typedef std::vector<wxTerminalCharacter> wxTerminalLine;
 
+/**
+ * Represent the content of a text console.
+ * It is the base class for consoles with or without historic.
+ * It is a vector of terminal lines. 
+ */
+class wxConsoleContent: public std::vector<wxTerminalLine>
+{
+public:
+	/**
+	 * Set a char at the specified position.
+	 */
+	void setChar(wxPoint pos, wxTerminalCharacter c);
+	/**
+	 * Set a char at the specified position.
+	 */
+	virtual void setChar(wxPoint pos, wxChar c, unsigned char fore, unsigned char back, unsigned char style);
+
+	/**
+	 * Add an empty new line
+	 */
+	virtual void addNewLine();
+	
+	/**
+	 * Ensure that the specified line is available in history, create it if needed.
+	 */
+	virtual void ensureHasLine(size_t l);
+
+	/**
+	 * Ensure that the specified character is available in history, create it if needed.
+	 */
+	virtual void ensureHasChar(size_t l, size_t c);
+	
+protected:
+
+};
+
+
+
+
 
 class wxTerminalContent: public std::vector<wxTerminalLine>
 {
@@ -81,11 +119,6 @@ public:
 
 	void addNewLine();
 
-	void registerListener(wxTerminalContentListener* listener);
-	void unregisterListener(wxTerminalContentListener* listener);
-	bool deleteOnNoListener()const{return m_deleteOnNoListener;}
-	void deleteOnNoListener(bool del){m_deleteOnNoListener = del;}
-	
 protected:	
 	void removeExtraLines();
 	
@@ -93,29 +126,8 @@ private:
 	size_t m_maxLineSize;
 	size_t m_maxLineCount;
 
-	std::set<wxTerminalContentListener*> m_listeners;
 	bool m_deleteOnNoListener;
 };
-
-
-
-
-class wxTerminalContentListener
-{
-public:
-	wxTerminalContentListener(wxTerminalContent* content = NULL);
-	~wxTerminalContentListener();
-
-	void setContent(wxTerminalContent* content);
-
-	const wxTerminalContent* getContent()const{return m_content;}
-	wxTerminalContent* getContent(){return m_content;}
-
-	bool hasContent()const{return m_content!=NULL;}
-private:
-	wxTerminalContent* m_content;
-};
-
 
 
 class wxTerminalParser
@@ -422,7 +434,7 @@ private:
 
 
 
-class wxTerminalCtrl: public wxScrolledCanvas, public wxTerminalContentListener, protected wxTerminalParser
+class wxTerminalCtrl: public wxScrolledCanvas, protected wxTerminalParser
 {
 	wxDECLARE_EVENT_TABLE();
 public:
@@ -484,6 +496,12 @@ protected:
 	/** \} */
 	
 private:
+	wxConsoleContent *m_historicContent;
+	wxConsoleContent *m_staticContent;
+	wxConsoleContent *m_currentContent;
+	bool m_isHistoric;
+	
+	
 	
 	void SetChar(wxChar c);
 	
@@ -501,9 +519,6 @@ private:
 
 	wxColour m_colours[8];
 	unsigned char  m_lastBackColor, m_lastForeColor, m_lastStyle;
-	unsigned short m_inputState;
-	unsigned short m_commandState;
-	std::vector<unsigned char> m_escapeInputBuffer;
 	
 	wxOutputStream* m_outputStream;
 	wxInputStream*  m_inputStream;
