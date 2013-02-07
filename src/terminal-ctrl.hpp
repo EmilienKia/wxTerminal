@@ -98,41 +98,6 @@ protected:
 
 
 
-class wxTerminalContent: public std::vector<wxTerminalLine>
-{
-public:
-	wxTerminalContent(size_t maxLineSize=0, size_t maxLineCount=0);
-	~wxTerminalContent();
-
-	void setMaxLineSize(size_t maxLinesize);
-	void setMaxLineCount(size_t maxLineCount);
-
-	size_t getLineCount()const{return size();}
-	size_t getMaxLineSize()const{return m_maxLineSize;}
-	size_t getMaxLineCount()const{return m_maxLineCount;}
-	
-	size_t isLineInfinite()const{return m_maxLineSize==0;}
-
-	void setChar(wxPoint pos, wxChar c, char fore, char back, unsigned char style);
-	void setChar(wxPoint pos, wxTerminalCharacter c);
-	
-	void append(wxChar c, char fore, char back, unsigned char style);
-	void append(const wxTerminalCharacter& c);
-
-	void addNewLine();
-
-protected:	
-	void removeExtraLines();
-	
-private:
-	size_t m_maxLineSize;
-	size_t m_maxLineCount;
-
-	bool m_deleteOnNoListener;
-};
-
-
-
 class wxTerminalCtrl: public wxScrolledCanvas, protected TerminalParser
 {
 	wxDECLARE_EVENT_TABLE();
