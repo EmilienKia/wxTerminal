@@ -272,7 +272,7 @@ void wxTerminalCtrl::CommonInit()
 
 	m_caret = new wxCaret(this, GetCharSize());
 	m_caret->Show();
-	SetCaretPosition(0, 0);	
+	SetCaretPosition(0, 0);
 }
 
 void wxTerminalCtrl::GenerateFonts(const wxFont& font)

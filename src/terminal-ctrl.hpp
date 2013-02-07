@@ -29,7 +29,7 @@
 extern wxString wxTerminalCtrlNameStr;
 
 struct wxTerminalCharacter;
-class wxTerminalContent;
+class wxConsoleContent;
 class wxTerminalCtrl;
 
 
@@ -165,18 +165,27 @@ protected:
 
 	void Append(const unsigned char* buff, size_t sz);
 
+	/** Set a character at the specified position (console coordinates). */
+	void SetChar(wxChar c);
+
+	
+	/** Recompute scroll bar states (size and pos) from console size and historic position and size.*/ 
 	void UpdateScrollBars();
 
+	/** Move the caret to the specified position. */
 	void SetCaretPosition(int x, int y){SetCaretPosition(wxPoint(x, y));}
+	/**
+	 * Move the caret (console textual cursor) to the specified position.
+     * \param pos Caret absolute position in console coordinates (visible, in chars).
+	 */
 	void SetCaretPosition(wxPoint pos);
+	/** Move the caret of specified offset (in chars). */
 	void MoveCaret(int x=0, int y=0);
+
+	/** Retrieve the caret (console textual cursor) position. */
 	const wxPoint& GetCaretPosition()const{return m_caretPos;}
+	/** Retrieve the caret (console textual cursor) position in historic coordinates. */
 	wxPoint GetCaretPosInBuffer()const;
-
-	wxSize m_clSizeChar;
-
-	void GenerateFonts(const wxFont& font);
-
 
 	/**
 	 * Declaration of TerminalParser interface abstract functions
@@ -199,26 +208,24 @@ private:
 	wxConsoleContent *m_staticContent;
 	wxConsoleContent *m_currentContent;
 	bool m_isHistoric;
-	
-	
-	
-	void SetChar(wxChar c);
+
+	void GenerateFonts(const wxFont& font);
 	
 	void OnPaint(wxPaintEvent& event);
 	void OnSize(wxSizeEvent& event);
 	void OnScroll(wxScrollWinEvent& event);
 	void OnChar(wxKeyEvent& event);
 	void OnTimer(wxTimerEvent& event);
+	
+	wxSize m_clSizeChar; // Size of console in chars
+	wxCaret* m_caret;    // Caret pseudo-widget instance.
+	wxPoint  m_caretPos; // Position of caret (console cursor) in chars
 
 	wxFont m_defaultFont, m_boldFont, m_underlineFont, m_boldUnderlineFont;
-
-	wxTimer* m_timer;
-	wxCaret* m_caret;
-	wxPoint  m_caretPos;
-
 	wxColour m_colours[8];
 	unsigned char  m_lastBackColor, m_lastForeColor, m_lastStyle;
 	
+	wxTimer* m_timer;    // Timer for i/o treatments.
 	wxOutputStream* m_outputStream;
 	wxInputStream*  m_inputStream;
 	wxInputStream*  m_errorStream;
