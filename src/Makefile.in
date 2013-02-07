@@ -64,7 +64,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_wxterminal_OBJECTS = main.$(OBJEXT) terminal-ctrl.$(OBJEXT)
+am_wxterminal_OBJECTS = main.$(OBJEXT) terminal-ctrl.$(OBJEXT) \
+	terminal-parser.$(OBJEXT)
 wxterminal_OBJECTS = $(am_wxterminal_OBJECTS)
 am__DEPENDENCIES_1 =
 wxterminal_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -292,7 +293,9 @@ AM_CFLAGS = \
 wxterminal_SOURCES = \
 	main.cc     \
 	terminal-ctrl.hpp     \
-	terminal-ctrl.cpp
+	terminal-ctrl.cpp     \
+	terminal-parser.cpp     \
+	terminal-parser.hpp
 
 wxterminal_LDFLAGS = 
 wxterminal_LDADD = \
@@ -391,6 +394,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/terminal-ctrl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/terminal-parser.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

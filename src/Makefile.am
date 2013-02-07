@@ -18,7 +18,9 @@ bin_PROGRAMS = wxterminal
 wxterminal_SOURCES = \
 	main.cc     \
 	terminal-ctrl.hpp     \
-	terminal-ctrl.cpp
+	terminal-ctrl.cpp     \
+	terminal-parser.cpp     \
+	terminal-parser.hpp
 
 wxterminal_LDFLAGS = 
 
