@@ -109,7 +109,7 @@ public:
     virtual bool Create(wxWindow *parent, wxWindowID id, const wxPoint &pos=wxDefaultPosition,
         const wxSize &size=wxDefaultSize, long style=0, const wxString &name=wxTerminalCtrlNameStr);
 
-	wxSize GetClientSizeInChars()const{return m_clSizeChar;}
+	wxSize GetClientSizeInChars()const{return m_consoleSize;}
 
 	// Output stream where send user input.
 	wxOutputStream* GetOutputStream()const{return m_outputStream;}
@@ -152,6 +152,14 @@ protected:
 	/** Retrieve the caret (console textual cursor) position in historic coordinates. */
 	wxPoint GetCaretPosInBuffer()const;
 
+	/** Translate Console coordinates to Historic coordinates.*/
+	int ConsoleToHistoric(int row)const;
+	wxPoint ConsoleToHistoric(wxPoint pt)const{return wxPoint(pt.x, ConsoleToHistoric(pt.y));}
+	
+	/** Translate Historic coordinates to Console coordinates.*/
+	int HistoricToConsole(int row)const;
+	wxPoint HistoricToConsole(wxPoint pt)const{return wxPoint(pt.x, HistoricToConsole(pt.y));}
+	
 	/**
 	 * Declaration of TerminalParser interface abstract functions
 	 * \{ */
@@ -182,9 +190,9 @@ private:
 	void OnChar(wxKeyEvent& event);
 	void OnTimer(wxTimerEvent& event);
 	
-	wxSize m_clSizeChar; // Size of console in chars
-	wxCaret* m_caret;    // Caret pseudo-widget instance.
-	wxPoint  m_caretPos; // Position of caret (console cursor) in chars
+	wxSize   m_consoleSize; // Size of console in chars
+	wxCaret* m_caret;       // Caret pseudo-widget instance.
+	wxPoint  m_caretPos;    // Position of caret (console cursor) in chars
 
 	wxFont m_defaultFont, m_boldFont, m_underlineFont, m_boldUnderlineFont;
 	wxColour m_colours[8];

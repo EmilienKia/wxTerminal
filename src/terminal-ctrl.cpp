@@ -159,7 +159,7 @@ void wxTerminalCtrl::CommonInit()
 	m_colours[15] = wxColour(255, 255, 255); // Bright grey (white)
 */
 
-	m_clSizeChar = wxSize(80, 25);
+	m_consoleSize = wxSize(80, 25);
 
 	GenerateFonts(wxFont(10, wxFONTFAMILY_TELETYPE));
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
@@ -169,16 +169,15 @@ void wxTerminalCtrl::CommonInit()
 	m_lastForeColor = 7;
 	m_lastStyle     = wxTCS_Normal;
 
+	m_caret = new wxCaret(this, GetCharSize());
+	m_caret->Show();
+	SetCaretPosition(0, 0);
 	
 	EnableScrolling(false, false);
 	UpdateScrollBars();
 	
 	m_timer = new wxTimer(this);
 	m_timer->Start(10);
-
-	m_caret = new wxCaret(this, GetCharSize());
-	m_caret->Show();
-	SetCaretPosition(0, 0);
 }
 
 void wxTerminalCtrl::GenerateFonts(const wxFont& font)
@@ -189,54 +188,71 @@ void wxTerminalCtrl::GenerateFonts(const wxFont& font)
 	m_boldUnderlineFont = m_boldFont.Underlined();
 }
 
-void wxTerminalCtrl::SetCaretPosition(wxPoint pos)
-{
-	if(pos.x==-1)
-		pos.x = m_caretPos.x;
-	if(pos.y==-1)
-		pos.y = m_caretPos.y;
-	m_caretPos = pos;
-	wxSize sz = GetCharSize();
-//printf("SetCaretPosition %d,%d\n", m_caretPos.x, m_caretPos.y);
-	m_caret->Move(sz.x*pos.x, sz.y*pos.y);
-}
-
-void wxTerminalCtrl::MoveCaret(int x, int y)
-{
-//printf("MoveCaret %d,%d - %d,%d\n", m_caretPos.x, m_caretPos.y, x, y);
-	m_caretPos.x += x;
-	m_caretPos.y += y;
-
-	if(m_caretPos.x<0)
-	{
-		while(m_caretPos.x<0)
-		{
-			m_caretPos.y -= 1;
-			m_caretPos.x += m_currentContent->at(m_caretPos.y + GetScrollPos(wxVERTICAL)).size()-1;
-		}
-	}
-	// TODO else {}
-
-	if(m_caretPos.y<0)
-		m_caretPos.y = 0;
-	// TODO else {}
-
-	SetCaretPosition(-1, -1);
-}
-
-wxPoint wxTerminalCtrl::GetCaretPosInBuffer()const
-{
-	wxPoint pos = GetCaretPosition();
-	pos.y += GetScrollPos(wxVERTICAL);
-	return pos;
-}
-
 wxSize wxTerminalCtrl::GetCharSize(wxChar c)const
 {
 	wxSize sz;
 	GetTextExtent(c, &sz.x, &sz.y, NULL, NULL, &m_defaultFont);
 	return sz;
 }
+
+int wxTerminalCtrl::ConsoleToHistoric(int row)const
+{
+	return row + GetScrollPos(wxVERTICAL);
+}
+
+int wxTerminalCtrl::HistoricToConsole(int row)const
+{
+	return row - GetScrollPos(wxVERTICAL);
+}
+
+wxPoint wxTerminalCtrl::GetCaretPosInBuffer()const
+{
+	return ConsoleToHistoric(GetCaretPosition());
+}
+
+void wxTerminalCtrl::SetCaretPosition(wxPoint pos)
+{
+	// Move caret position
+	if(pos.x==-1)
+		pos.x = m_caretPos.x;
+	if(pos.y==-1)
+		pos.y = m_caretPos.y;
+	m_caretPos = pos;
+ 
+
+	// Move caret pseudo-widget in consequence
+//printf("SetCaretPosition %d,%d\n", m_caretPos.x, m_caretPos.y);
+	wxSize sz = GetCharSize();
+	m_caret->Move(sz.x*pos.x, sz.y*pos.y);
+}
+
+void wxTerminalCtrl::MoveCaret(int x, int y)
+{
+	wxPoint pos = m_caretPos + wxSize(x, y);
+
+	// Scroll vertically to make caret horizontally visible
+	int scroll = 0;
+	while(pos.x >= m_consoleSize.x)
+	{
+		++scroll;
+		++pos.y;
+		pos.x -= m_consoleSize.x;
+	}
+	while(pos.x < 0)
+	{
+		--scroll;
+		--pos.y;
+		pos.x += m_consoleSize.x;
+	}
+
+	SetCaretPosition(pos);
+}
+
+void wxTerminalCtrl::SetChar(wxChar c)
+{
+	m_currentContent->setChar(ConsoleToHistoric(m_caretPos), c, m_lastForeColor, m_lastBackColor, m_lastStyle);
+}
+
 
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 {
@@ -315,7 +331,7 @@ void wxTerminalCtrl::OnSize(wxSizeEvent& event)
 {
 	wxSize sz = GetClientSize();
 	wxSize ch = GetCharSize();
-	m_clSizeChar = wxSize(sz.x/ch.x, sz.y/ch.y);
+	m_consoleSize = wxSize(sz.x/ch.x, sz.y/ch.y);
 	
 	UpdateScrollBars();
 }
@@ -323,10 +339,12 @@ void wxTerminalCtrl::OnSize(wxSizeEvent& event)
 void wxTerminalCtrl::UpdateScrollBars()
 {
 	wxConsoleContent* content = m_currentContent;
+	wxPoint pos = ConsoleToHistoric(m_caretPos);
 	wxSize charSz = GetCharSize();
 	wxSize globalSize(0, content?content->size():0);
 	SetScrollRate(charSz.x, charSz.y);
 	SetVirtualSize(0, globalSize.y*charSz.y);
+	SetCaretPosition(HistoricToConsole(pos));
 }
 
 void wxTerminalCtrl::OnChar(wxKeyEvent& event)
@@ -398,19 +416,6 @@ void wxTerminalCtrl::OnChar(wxKeyEvent& event)
 		}
 	}
 }
-
-void wxTerminalCtrl::SetChar(wxChar c)
-{
-	wxConsoleContent* content = m_currentContent;
-	if(!content)
-		return;
-
-	wxPoint pos = GetCaretPosition();
-	pos.y += GetScrollPos(wxVERTICAL);
-	
-	content->setChar(pos, c, m_lastForeColor, m_lastBackColor, m_lastStyle);
-}
-
 
 
 //
