@@ -30,6 +30,14 @@
 
 //
 //
+// wxTerminalCharacter
+//
+//
+
+wxTerminalCharacter wxTerminalCharacter::DefaultCharacter = { 0, 0, wxTCS_Invisible, 0 };
+
+//
+//
 // wxConsoleContent
 //
 //
@@ -69,7 +77,7 @@ void wxConsoleContent::ensureHasChar(size_t l, size_t c)
 	wxTerminalLine& line = at(l);
 
 	if(line.size()<=c)
-		line.resize(c+1);
+		line.resize(c+1, wxTerminalCharacter::DefaultCharacter);
 }
 
 

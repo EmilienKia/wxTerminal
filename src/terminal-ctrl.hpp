@@ -53,6 +53,8 @@ struct wxTerminalCharacter
 	unsigned char back;
 	unsigned char style;
 	wxChar c;
+
+	static wxTerminalCharacter DefaultCharacter;
 };
 
 
