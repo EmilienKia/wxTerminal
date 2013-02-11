@@ -675,3 +675,36 @@ void wxTerminalCtrl::onOSC(unsigned short command, const std::vector<unsigned ch
 }
 
 
+void wxTerminalCtrl::onESC(unsigned char command)
+{
+	std::cout << "onESC " << (char) command << std::endl;
+	TerminalParser::onESC(command);
+}
+
+void wxTerminalCtrl::onESC(unsigned char command, unsigned char param)
+{
+	std::cout << "onESC " << (char) command << " " << (char)param << std::endl;
+	TerminalParser::onESC(command, param);
+}
+
+void wxTerminalCtrl::executeC0ControlCode(unsigned char c) // TEST
+{
+	std::cout << "executeC0ControlCode " << std::hex << std::showbase << (int)c << std::endl;
+	TerminalParser::executeC0ControlCode(c);
+}
+
+void wxTerminalCtrl::executeC1ControlCode(unsigned char c) // TEST
+{
+	std::cout << "executeC1ControlCode " << std::hex << std::showbase << (int)c << std::endl;
+	TerminalParser::executeC1ControlCode(c);
+}
+
+void wxTerminalCtrl::onCSI(unsigned char command, const std::vector<unsigned short>& params, const std::vector<unsigned char>& collect)
+{
+	std::cout << "onCSI " << std::hex << std::showbase << (int)command << std::endl;
+	for(size_t n=0; n<params.size(); ++n)
+		std::cout << "  param: " << std::hex << std::showbase << (int)params[n] << std::endl;
+	for(size_t n=0; n<collect.size(); ++n)
+		std::cout << "  collect: " << (char)collect[n] << std::endl;
+	TerminalParser::onCSI(command, params, collect);
+}

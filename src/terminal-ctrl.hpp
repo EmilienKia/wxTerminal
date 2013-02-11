@@ -176,6 +176,13 @@ protected:
 	/*overriden*/ void onEL(unsigned short opt);
 	/*overriden*/ void onSGR(const std::vector<unsigned short> nbs);
 	/*overriden*/ void onOSC(unsigned short command, const std::vector<unsigned char>& params);
+
+	/*overriden*/ void onESC(unsigned char command); // TEST
+	/*overriden*/ void onESC(unsigned char command, unsigned char param); // TEST
+	/*overriden*/ void executeC0ControlCode(unsigned char c); // TEST
+	/*overriden*/ void executeC1ControlCode(unsigned char c); // TEST
+	/*overriden*/ void onCSI(unsigned char command, const std::vector<unsigned short>& params, const std::vector<unsigned char>& collect);
+
 	/** \} */
 	
 private:
