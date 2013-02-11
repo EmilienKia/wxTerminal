@@ -100,7 +100,7 @@ protected:
 
 
 
-class wxTerminalCtrl: public wxScrolledCanvas, protected TerminalParser
+class wxTerminalCtrl: public wxWindow, protected TerminalParser
 {
 	wxDECLARE_EVENT_TABLE();
 public:
@@ -193,6 +193,8 @@ private:
 	void OnTimer(wxTimerEvent& event);
 	
 	wxSize   m_consoleSize; // Size of console in chars
+	wxPoint  m_consolePos;  // Position of consol in historic.
+	
 	wxCaret* m_caret;       // Caret pseudo-widget instance.
 	wxPoint  m_caretPos;    // Position of caret (console cursor) in chars
 

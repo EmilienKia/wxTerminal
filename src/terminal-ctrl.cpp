@@ -23,6 +23,7 @@
 
 #include <wx/dcbuffer.h>
 #include <wx/caret.h>
+#include <wx/event.h>
 
 #include <cstring>
 
@@ -90,7 +91,7 @@ void wxConsoleContent::ensureHasChar(size_t l, size_t c)
 
 wxString wxTerminalCtrlNameStr(wxT("wxTerminalCtrl"));
 
-wxBEGIN_EVENT_TABLE(wxTerminalCtrl, wxScrolledCanvas)
+wxBEGIN_EVENT_TABLE(wxTerminalCtrl, wxWindow)
 	EVT_PAINT(wxTerminalCtrl::OnPaint)
 	EVT_SIZE(wxTerminalCtrl::OnSize)
 	EVT_SCROLLWIN(wxTerminalCtrl::OnScroll)
@@ -100,7 +101,7 @@ wxEND_EVENT_TABLE()
 
 wxTerminalCtrl::wxTerminalCtrl(wxWindow *parent, wxWindowID id, const wxPoint &pos,
     const wxSize &size, long style, const wxString &name):
-wxScrolledCanvas(parent, id, pos, size, style, name),
+wxWindow(parent, id, pos, size, style|wxVSCROLL/*|wxHSCROLL*/, name),
 m_inputStream(NULL),
 m_outputStream(NULL),
 m_historicContent(NULL),
@@ -126,7 +127,7 @@ wxTerminalCtrl::~wxTerminalCtrl()
 bool wxTerminalCtrl::Create(wxWindow *parent, wxWindowID id, const wxPoint &pos,
     const wxSize &size, long style, const wxString &name)
 {
-	if(!wxScrolledCanvas::Create(parent, id, pos, size, style|wxVSCROLL|wxHSCROLL, name))
+	if(!wxWindow::Create(parent, id, pos, size, style|wxVSCROLL/*|wxHSCROLL*/, name))
 		return false;
 	CommonInit();
 	return true;
@@ -168,6 +169,7 @@ void wxTerminalCtrl::CommonInit()
 */
 
 	m_consoleSize = wxSize(80, 25);
+	m_consolePos  = wxPoint(0, 0);
 
 	GenerateFonts(wxFont(10, wxFONTFAMILY_TELETYPE));
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
@@ -180,8 +182,7 @@ void wxTerminalCtrl::CommonInit()
 	m_caret = new wxCaret(this, GetCharSize());
 	m_caret->Show();
 	SetCaretPosition(0, 0);
-	
-	EnableScrolling(false, false);
+
 	UpdateScrollBars();
 	
 	m_timer = new wxTimer(this);
@@ -205,12 +206,12 @@ wxSize wxTerminalCtrl::GetCharSize(wxChar c)const
 
 int wxTerminalCtrl::ConsoleToHistoric(int row)const
 {
-	return row + GetScrollPos(wxVERTICAL);
+	return row + m_consolePos.y;
 }
 
 int wxTerminalCtrl::HistoricToConsole(int row)const
 {
-	return row - GetScrollPos(wxVERTICAL);
+	return row - m_consolePos.y;
 }
 
 wxPoint wxTerminalCtrl::GetCaretPosInBuffer()const
@@ -275,12 +276,10 @@ void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 	dc.SetPen(wxNullPen);
 	dc.DrawRectangle(0, 0, clientSz.x, clientSz.y);
 	
-	wxPoint scroll(0, GetScrollPos(wxVERTICAL));
-	
 	wxConsoleContent* content = m_currentContent;
 	if(content)
 	{
-		for(size_t n=0, l=GetScrollPos(wxVERTICAL); n<clchSz.y && l<content->size(); n++, l++)
+		for(size_t n=0, l=m_consolePos.y; n<clchSz.y && l<content->size(); n++, l++)
 		{
 			const wxTerminalLine& line = content->at(l);
 			for(size_t i=0; i<line.size(); i++)
@@ -331,6 +330,17 @@ void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 
 void wxTerminalCtrl::OnScroll(wxScrollWinEvent& event)
 {
+	// Save aboslute historic caret position (before console scroll)
+	wxPoint carpos = ConsoleToHistoric(m_caretPos);
+	
+	if(event.GetOrientation() == wxVERTICAL)
+	{
+		m_consolePos.y = event.GetPosition();
+	}
+
+	// Apply caret position (after scrolling)
+	SetCaretPosition(HistoricToConsole(carpos));
+	
 	Refresh();
 	event.Skip();
 }
@@ -346,12 +356,10 @@ void wxTerminalCtrl::OnSize(wxSizeEvent& event)
 
 void wxTerminalCtrl::UpdateScrollBars()
 {
-	wxConsoleContent* content = m_currentContent;
 	wxPoint pos = ConsoleToHistoric(m_caretPos);
-	wxSize charSz = GetCharSize();
-	wxSize globalSize(0, content?content->size():0);
-	SetScrollRate(charSz.x, charSz.y);
-	SetVirtualSize(0, globalSize.y*charSz.y);
+
+	SetScrollbar(wxVERTICAL, GetScrollPos(wxVERTICAL), m_consoleSize.y, m_currentContent->size());
+	
 	SetCaretPosition(HistoricToConsole(pos));
 }
 
@@ -530,13 +538,35 @@ void wxTerminalCtrl::onED(unsigned short opt) // Clears part of the screen.
 {
 	wxPoint pos = GetCaretPosInBuffer();
 	if(opt==0) // Erase Below
-		{} // TODO
+	{
+std::cout << "Erase below" << std::endl;
+		m_currentContent->resize(pos.y+1);
+	}
 	else if(opt==1) // Erase Above
-		{} // TODO
+	{
+std::cout << "Erase above" << std::endl;
+		int top = ConsoleToHistoric(0);
+		for(; top<pos.y-1 ; ++top)
+		{
+			(*m_currentContent)[top].clear();
+		}
+	}
 	else if(opt==2) // Erase All
-		{} // TODO
+	{
+std::cout << "Erase All" << std::endl;
+		for(int n=0; n<m_consoleSize.y; ++n)
+		{
+			m_currentContent->addNewLine();
+		}
+		UpdateScrollBars();
+		ScrollPages(1);
+		// TODO
+	}
 	else if(opt==3) // Erase Saved Lines (xterm)
-		{} // TODO	
+	{
+std::cout << "Erase saved lines (xterm)" << std::endl;
+		 // TODO
+	}	
 }
 
 void wxTerminalCtrl::onEL(unsigned short opt) // Erases part of the line.
