@@ -988,8 +988,7 @@ void TerminalParser::onCSI(unsigned char command, const std::vector<unsigned sho
 			/* TODO CSI interpreting is not fully implemented yet. */
 			std::cout << "CSI " << (char)command << std::endl; 
 			break;
-	}
-	
+	}	
 }
 
 void TerminalParser::onESC(unsigned char command)
