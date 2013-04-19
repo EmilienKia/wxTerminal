@@ -82,6 +82,353 @@ void wxConsoleContent::ensureHasChar(size_t l, size_t c)
 		line.resize(c+1, wxTerminalCharacter::DefaultCharacter);
 }
 
+//
+//
+// wxTerminalCharacterMap
+//
+// Extracted from Chromium OS project
+// http://git.chromium.org/gitweb/?p=chromiumos/platform/assets.git;a=blob;f=chromeapps/hterm/js/hterm_vt_character_map.js
+//
+
+wxTerminalCharacterMap::wxTerminalCharacterMap()
+{
+	clear();
+}
+
+wxTerminalCharacterMap::wxTerminalCharacterMap(const wxTerminalCharacterMap& map)
+{
+	for(size_t n=0; n<256; ++n)
+		_chars[n] = map._chars[n];
+}
+
+wxTerminalCharacterMap::wxTerminalCharacterMap(const wxTerminalCharacterMappping* mapping)
+{
+	clear();
+	map(mapping);
+}
+
+void wxTerminalCharacterMap::clear()
+{
+	for(size_t n=0; n<256; ++n)
+		_chars[n] = n;
+}
+
+void wxTerminalCharacterMap::map(const wxTerminalCharacterMappping* mapping)
+{
+	while(mapping->c!=0)
+	{
+		_chars[mapping->c] = mapping->u;
+		++mapping;
+	}
+}
+
+/**
+ * VT100 Graphic character map.
+ * http://vt100.net/docs/vt220-rm/table2-4.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_graphic[] = {
+      {0x60, 0x25c6},  // ` -> diamond
+      {0x61, 0x2592},  // a -> grey-box
+      {0x62, 0x2409},  // b -> h/t
+      {0x63, 0x240c},  // c -> f/f
+      {0x64, 0x240d},  // d -> c/r
+      {0x65, 0x240a},  // e -> l/f
+      {0x66, 0x00b0},  // f -> degree
+      {0x67, 0x00b1},  // g -> +/-
+      {0x68, 0x2424},  // h -> n/l
+      {0x69, 0x240b},  // i -> v/t
+      {0x6a, 0x2518},  // j -> bottom-right
+      {0x6b, 0x2510},  // k -> top-right
+      {0x6c, 0x250c},  // l -> top-left
+      {0x6d, 0x2514},  // m -> bottom-left
+      {0x6e, 0x253c},  // n -> line-cross
+      {0x6f, 0x23ba},  // o -> scan1
+      {0x70, 0x23bb},  // p -> scan3
+      {0x71, 0x2500},  // q -> scan5
+      {0x72, 0x23bc},  // r -> scan7
+      {0x73, 0x23bd},  // s -> scan9
+      {0x74, 0x251c},  // t -> left-tee
+      {0x75, 0x2524},  // u -> right-tee
+      {0x76, 0x2534},  // v -> bottom-tee
+      {0x77, 0x252c},  // w -> top-tee
+      {0x78, 0x2502},  // x -> vertical-line
+      {0x79, 0x2264},  // y -> less-equal
+      {0x7a, 0x2265},  // z -> greater-equal
+      {0x7b, 0x03c0},  // { -> pi
+      {0x7c, 0x2260},  // | -> not-equal
+      {0x7d, 0x00a3},  // } -> british-pound
+      {0x7e, 0x00b7},  // ~ -> dot
+	  {0,0}
+};
+wxTerminalCharacterMap wxTerminalCharacterMap::graphic(s_graphic);
+
+/**
+ * British character map.
+ * http://vt100.net/docs/vt220-rm/table2-5.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_british[] = {
+	  {0x23, 0x00a3},  // # -> british-pound
+	  {0,0}
+};
+wxTerminalCharacterMap wxTerminalCharacterMap::british(s_british);
+
+/**
+ * US ASCII map, no changes.
+ */
+wxTerminalCharacterMap wxTerminalCharacterMap::us;
+
+/**
+ * Dutch character map.
+ * http://vt100.net/docs/vt220-rm/table2-6.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_dutch[] = {
+      {0x23, 0x00a3},  // # -> british-pound
+
+      {0x40, 0x00be},  // @ -> 3/4
+
+      {0x5b, 0x0132},  // [ -> 'ij' ligature (xterm goes with \u00ff?)
+      {0x5c, 0x00bd},  // \ -> 1/2
+      {0x5d, 0x007c},  // ] -> vertical bar
+
+      {0x7b, 0x00a8},  // { -> two dots
+      {0x7c, 0x0066},  // | -> f
+      {0x7d, 0x00bc},  // } -> 1/4
+      {0x7e, 0x00b4},  // ~ -> acute
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::dutch(s_dutch);
+
+/**
+ * Finnish character map.
+ * http://vt100.net/docs/vt220-rm/table2-7.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_finnish[] = {
+      {0x5b, 0x00c4},  // [ -> 'A' umlaut
+      {0x5c, 0x00d6},  // \ -> 'O' umlaut
+      {0x5d, 0x00c5},  // ] -> 'A' ring
+      {0x5e, 0x00dc},  // ~ -> 'u' umlaut
+
+      {0x60, 0x00e9},  // ` -> 'e' acute
+
+      {0x7b, 0x00e4},  // { -> 'a' umlaut
+      {0x7c, 0x00f6},  // | -> 'o' umlaut
+      {0x7d, 0x00e5},  // } -> 'a' ring
+      {0x7e, 0x00fc},  // ~ -> 'u' umlaut
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::finnish(s_finnish);
+
+/**
+ * French character map.
+ * http://vt100.net/docs/vt220-rm/table2-8.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_french[] = {
+      {0x23, 0x00a3},  // # -> british-pound
+
+      {0x40, 0x00e0},  // @ -> 'a' grave
+
+      {0x5b, 0x00b0},  // [ -> ring
+      {0x5c, 0x00e7},  // \ -> 'c' cedilla
+      {0x5d, 0x00a7},  // ] -> section symbol (double s)
+
+      {0x7b, 0x00e9},  // { -> 'e' acute
+      {0x7c, 0x00f9},  // | -> 'u' grave
+      {0x7d, 0x00e8},  // } -> 'e' grave
+      {0x7e, 0x00a8},  // ~ -> umlaut
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::french(s_french);
+
+/**
+ * French Canadian character map.
+ * http://vt100.net/docs/vt220-rm/table2-9.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_french_canadian[] = {
+      {0x40, 0x00e0},  // @ -> 'a' grave
+
+      {0x5b, 0x00e2},  // [ -> 'a' circumflex
+      {0x5c, 0x00e7},  // \ -> 'c' cedilla
+      {0x5d, 0x00ea},  // ] -> 'e' circumflex
+      {0x5e, 0x00ee},  // ^ -> 'i' circumflex
+
+      {0x60, 0x00f4},  // ` -> 'o' circumflex
+
+      {0x7b, 0x00e9},  // { -> 'e' acute
+      {0x7c, 0x00f9},  // | -> 'u' grave
+      {0x7d, 0x00e8},  // } -> 'e' grave
+      {0x7e, 0x00fb},  // ~ -> 'u' circumflex
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::french_canadian(s_french_canadian);
+
+/**
+ * German character map.
+ * http://vt100.net/docs/vt220-rm/table2-10.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_german[] = {
+      {0x40, 0x00a7},  // @ -> section symbol (double s)
+
+      {0x5b, 0x00c4},  // [ -> 'A' umlaut
+      {0x5c, 0x00d6},  // \ -> 'O' umlaut
+      {0x5d, 0x00dc},  // ] -> 'U' umlaut
+
+      {0x7b, 0x00e4},  // { -> 'a' umlaut
+      {0x7c, 0x00f6},  // | -> 'o' umlaut
+      {0x7d, 0x00fc},  // } -> 'u' umlaut
+      {0x7e, 0x00df},  // ~ -> eszett
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::german(s_german);
+
+/**
+ * Italian character map.
+ * http://vt100.net/docs/vt220-rm/table2-11.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_italian[] = {
+      {0x23, 0x00a3},  // # -> british-pound
+
+      {0x40, 0x00a7},  // @ -> section symbol (double s)
+
+      {0x5b, 0x00b0},  // [ -> ring
+      {0x5c, 0x00e7},  // \ -> 'c' cedilla
+      {0x5d, 0x00e9},  // ] -> 'e' acute
+
+      {0x60, 0x00f9},  // ` -> 'u' grave
+
+      {0x7b, 0x00e0},  // { -> 'a' grave
+      {0x7c, 0x00f2},  // | -> 'o' grave
+      {0x7d, 0x00e8},  // } -> 'e' grave
+      {0x7e, 0x00ec},  // ~ -> 'i' grave
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::italian(s_italian);
+
+/**
+ * Norwegian/Danish character map.
+ * http://vt100.net/docs/vt220-rm/table2-12.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_norwegian[] = {
+      {0x40, 0x00c4},  // @ -> 'A' umlaut
+
+      {0x5b, 0x00c6},  // [ -> 'AE' ligature
+      {0x5c, 0x00d8},  // \ -> 'O' stroke
+      {0x5d, 0x00c5},  // ] -> 'A' ring
+      {0x5e, 0x00dc},  // ^ -> 'U' umlaut
+
+      {0x60, 0x00e4},  // ` -> 'a' umlaut
+
+      {0x7b, 0x00e6},  // { -> 'ae' ligature
+      {0x7c, 0x00f8},  // | -> 'o' stroke
+      {0x7d, 0x00e5},  // } -> 'a' ring
+      {0x7e, 0x00fc},  // ~ -> 'u' umlaut
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::norwegian(s_norwegian);
+
+/**
+ * Spanish character map.
+ * http://vt100.net/docs/vt220-rm/table2-13.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_spanish[] = {
+      {0x23, 0x00a3},  // # -> british-pound
+
+      {0x40, 0x00a7},  // @ -> section symbol (double s)
+
+      {0x5b, 0x00a1},  // [ -> '!' inverted
+      {0x5c, 0x00d1},  // \ -> 'N' tilde
+      {0x5d, 0x00bf},  // ] -> '?' inverted
+
+      {0x7b, 0x00b0},  // { -> ring
+      {0x7c, 0x00f1},  // | -> 'n' tilde
+      {0x7d, 0x00e7},  // } -> 'c' cedilla
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::spanish(s_spanish);
+
+/**
+ * Swedish character map.
+ * http://vt100.net/docs/vt220-rm/table2-14.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_swedish[] = {
+      {0x40, 0x00c9},  // @ -> 'E' acute
+
+      {0x5b, 0x00c4},  // [ -> 'A' umlaut
+      {0x5c, 0x00d6},  // \ -> 'O' umlaut
+      {0x5d, 0x00c5},  // ] -> 'A' ring
+      {0x5e, 0x00dc},  // ^ -> 'U' umlaut
+
+      {0x60, 0x00e9},  // ` -> 'e' acute
+
+      {0x7b, 0x00e4},  // { -> 'a' umlaut
+      {0x7c, 0x00f6},  // | -> 'o' umlaut
+      {0x7d, 0x00e5},  // } -> 'a' ring
+      {0x7e, 0x00fc},  // ~ -> 'u' umlaut
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::swedish(s_swedish);
+
+/**
+ * Swiss character map.
+ * http://vt100.net/docs/vt220-rm/table2-15.html
+ */
+static wxTerminalCharacterMap::wxTerminalCharacterMappping s_swiss[] = {
+      {0x23, 0x00f9},  // # -> 'u' grave
+
+      {0x40, 0x00e0},  // @ -> 'a' grave
+
+      {0x5b, 0x00e9},  // [ -> 'e' acute
+      {0x5c, 0x00e7},  // \ -> 'c' cedilla
+      {0x5d, 0x00ea},  // ] -> 'e' circumflex
+      {0x5e, 0x00ee},  // ^ -> 'i' circumflex
+      {0x5f, 0x00e8},  // _ -> 'e' grave
+
+      {0x60, 0x00f4},  // ` -> 'o' circumflex
+
+      {0x7b, 0x00e4},  // { -> 'a' umlaut
+      {0x7c, 0x00f6},  // | -> 'o' umlaut
+      {0x7d, 0x00fc},  // } -> 'u' umlaut
+      {0x7e, 0x00fb},  // ~ -> 'u' circumflex
+	  {0,0}
+    };
+wxTerminalCharacterMap wxTerminalCharacterMap::swiss(s_swiss);
+
+const wxTerminalCharacterMap* wxTerminalCharacterMap::getMap(char id)
+{
+	switch(id)
+	{
+	case '0':
+		return &graphic;
+	case 'A':
+		return &british;
+	case 'B':
+		return &us;
+	case '4':
+		return &dutch;
+	case 'C':
+	case '5':
+		return &finnish;
+	case 'R':
+		return &french;
+	case 'Q':
+		return &french_canadian;
+	case 'K':
+		return &german;
+	case 'Y':
+		return &italian;
+	case 'E':
+	case '6':
+		return &norwegian;
+	case 'Z':
+		return &spanish;
+	case 'H':
+	case '7':
+		return &swedish;
+	case '=':
+		return &swiss;
+	default:
+		return NULL;
+	}
+}
 
 //
 //
@@ -143,6 +490,16 @@ void wxTerminalCtrl::CommonInit()
 	m_currentContent = m_historicContent;
 	m_isHistoric = true;
 
+	// Default character set
+	m_charset = wxTCSET_UTF_8;
+	
+	// Default character maps
+	m_Gx[0] = wxTerminalCharacterMap::getMap('B');
+	m_Gx[1] = wxTerminalCharacterMap::getMap('0');
+	m_Gx[2] = wxTerminalCharacterMap::getMap('B');
+	m_Gx[3] = wxTerminalCharacterMap::getMap('B');
+	m_GL = m_GR = 0;
+	
 	m_colours[0]  = wxColour(0, 0, 0); // Normal black
 	m_colours[1]  = wxColour(255, 85, 85); // Bright red
 	m_colours[2] = wxColour(85, 255, 85); // Bright green
@@ -498,18 +855,41 @@ void wxTerminalCtrl::Append(const unsigned char* buff, size_t sz)
 
 void wxTerminalCtrl::onPrintableChar(unsigned char c)
 {
-	SetChar(c);
-	MoveCaret(1);
+	switch(m_charset)
+	{
+		case wxTCSET_ISO_8859_1:
+			SetChar(c);
+			MoveCaret(1);
+			break;
+		case wxTCSET_UTF_8:
+		{
+			if(c & 0x80 == 0)
+			{
+				// 7-bits representation only
+				SetChar(c);
+				MoveCaret(1);
+			}
+			else
+			{
+				// TODO
+				SetChar(c);
+				MoveCaret(1);				
+			}
+			break;
+		}
+	}
 }
 
 void wxTerminalCtrl::onS7C1T() // 7-bit controls
 {
 	std::cout << "onS7C1T" << std::endl;
+	// Note: no trapping 7 and 8 bits modes as they are always recognized for now
 }
 
 void wxTerminalCtrl::onS8C1T() // 8-bit controls
 {
 	std::cout << "onS8C1T" << std::endl;
+	// Note: no trapping 7 and 8 bits modes as they are always recognized for now
 }
 
 void wxTerminalCtrl::onANSIconf1() // Set ANSI conformance level 1  (vt100, 7-bit controls).
@@ -562,24 +942,13 @@ void wxTerminalCtrl::onUTF_8() // Select UTF-8 character set (ISO 2022).
 	std::cout << "onUTF_8" << std::endl;
 }
 
-void wxTerminalCtrl::onDesignateG0(unsigned char charset) // Designate G0 Character Set (ISO 2022) 
+// Character Set Selection (SCS). Designate G(id) (G0...G3) Character Set (ISO 2022)
+void wxTerminalCtrl::onSCS(unsigned char id, unsigned char charset)
 {
-	std::cout << "onDesignateG0 " << (char)charset << std::endl;
-}
-
-void wxTerminalCtrl::onDesignateG1(unsigned char charset) // Designate G1 Character Set (ISO 2022) 
-{
-	std::cout << "onDesignateG1 " << (char)charset << std::endl;
-}
-
-void wxTerminalCtrl::onDesignateG2(unsigned char charset) // Designate G2 Character Set (ISO 2022) 
-{
-	std::cout << "onDesignateG2 " << (char)charset << std::endl;
-}
-
-void wxTerminalCtrl::onDesignateG3(unsigned char charset) // Designate G3 Character Set (ISO 2022)
-{
-	std::cout << "onDesignateG3 " << (char)charset << std::endl;
+	if(id<4)
+		m_Gx[id] = wxTerminalCharacterMap::getMap(charset);
+	if(m_Gx[id]==NULL)
+		m_Gx[id] = &wxTerminalCharacterMap::us;
 }
 
 void wxTerminalCtrl::onDECBI() // Back Index, VT420 and up.
@@ -617,29 +986,29 @@ void wxTerminalCtrl::onRIS() // Full Reset
 	std::cout << "onRIS" << std::endl;
 }
 
-void wxTerminalCtrl::onLS2() // Invoke the G2 Character Set
+void wxTerminalCtrl::onLS2() // Invoke the G2 Character Set as GL.
 {
-	std::cout << "onLS2" << std::endl;
+	m_GL = 2;
 }
 
-void wxTerminalCtrl::onLS3() // Invoke the G3 Character Set
+void wxTerminalCtrl::onLS3() // Invoke the G3 Character Set as GL.
 {
-	std::cout << "onLS3" << std::endl;
+	m_GL = 3;
 }
 
 void wxTerminalCtrl::onLS1R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
-	std::cout << "onLS1R" << std::endl;
+	m_GR = 1;
 }
 
 void wxTerminalCtrl::onLS2R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
-	std::cout << "onLS2R" << std::endl;
+	m_GR = 2;
 }
 
 void wxTerminalCtrl::onLS3R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
-	std::cout << "onLS3R" << std::endl;
+	m_GR = 3;
 }
 
 
@@ -720,12 +1089,16 @@ void wxTerminalCtrl::onCR()   // 0x0D - CARIAGE RETURN -- Done
 
 void wxTerminalCtrl::onSO()   // 0x0E
 {
-	std::cout << "onSO" << std::endl;
+	// Shift Out (SO), aka Lock Shift 0 (LS1).
+	// Invoke G1 character set in GL.
+	m_GL = 1;
 }
 
 void wxTerminalCtrl::onSI()   // 0x0F
 {
-	std::cout << "onSI" << std::endl;
+    // Shift In (SI), aka Lock Shift 0 (LS0).
+    // Invoke G0 character set in GL.
+	m_GL = 0;
 }
 
 void wxTerminalCtrl::onDLE()  // 0x10

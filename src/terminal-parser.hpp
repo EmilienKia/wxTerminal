@@ -70,10 +70,7 @@ protected:
 	virtual void onDECALN(){} // DEC Screen Alignment Test
 	virtual void onISO8859_1(){} // Select default character set. That is ISO 8859-1 (ISO 2022).
 	virtual void onUTF_8(){} // Select UTF-8 character set (ISO 2022).
-	virtual void onDesignateG0(unsigned char charset){} // Designate G0 Character Set (ISO 2022) 
-	virtual void onDesignateG1(unsigned char charset){} // Designate G1 Character Set (ISO 2022) 
-	virtual void onDesignateG2(unsigned char charset){} // Designate G2 Character Set (ISO 2022) 
-	virtual void onDesignateG3(unsigned char charset){} // Designate G3 Character Set (ISO 2022)
+	virtual void onSCS(unsigned char id, unsigned char charset){} // Character Set Selection (SCS). Designate G(id) (G0...G3) Character Set (ISO 2022) 
 	virtual void onDECBI(){} // Back Index, VT420 and up.
 	virtual void onDECSC(){} // Save cursor
 	virtual void onDECRC(){} // Restore cursor
@@ -81,8 +78,8 @@ protected:
 	virtual void onDECKPAM(){} // Application Keypad
 	virtual void onDECKPNM(){} // Normal Keypad
 	virtual void onRIS(){} // Full Reset
-	virtual void onLS2(){} // Invoke the G2 Character Set
-	virtual void onLS3(){} // Invoke the G3 Character Set
+	virtual void onLS2(){} // Invoke the G2 Character Set as GL.
+	virtual void onLS3(){} // Invoke the G3 Character Set as GL.
 	virtual void onLS1R(){} // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 	virtual void onLS2R(){} // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 	virtual void onLS3R(){} // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.

@@ -97,7 +97,38 @@ protected:
 };
 
 
+enum wxTerminalCharacterSet
+{
+	wxTCSET_ISO_8859_1,
+	wxTCSET_UTF_8
+};
 
+
+class wxTerminalCharacterMap
+{
+public:
+	struct wxTerminalCharacterMappping {
+		unsigned char c;
+		wxUniChar     u;
+	};
+	
+	
+	/** Simple character mapping.*/
+	wxUniChar get(unsigned char c)const{return _chars[c];}
+
+	static wxTerminalCharacterMap graphic, british, us, dutch, finnish, french, french_canadian, german, italian, norwegian,  spanish, swedish, swiss;
+	static const wxTerminalCharacterMap* getMap(char id);
+
+protected:
+	wxTerminalCharacterMap();
+	wxTerminalCharacterMap(const wxTerminalCharacterMap& map);
+	wxTerminalCharacterMap(const wxTerminalCharacterMappping* mapping);
+
+	void clear();
+	void map(const wxTerminalCharacterMappping* mapping);
+	
+	wxUniChar _chars[256];
+};
 
 
 class wxTerminalCtrl: public wxWindow, protected TerminalParser
@@ -181,10 +212,7 @@ protected:
 	/*overriden*/ void onDECALN(); // DEC Screen Alignment Test
 	/*overriden*/ void onISO8859_1(); // Select default character set. That is ISO 8859-1 (ISO 2022).
 	/*overriden*/ void onUTF_8(); // Select UTF-8 character set (ISO 2022).
-	/*overriden*/ void onDesignateG0(unsigned char charset); // Designate G0 Character Set (ISO 2022) 
-	/*overriden*/ void onDesignateG1(unsigned char charset); // Designate G1 Character Set (ISO 2022) 
-	/*overriden*/ void onDesignateG2(unsigned char charset); // Designate G2 Character Set (ISO 2022) 
-	/*overriden*/ void onDesignateG3(unsigned char charset); // Designate G3 Character Set (ISO 2022)
+	/*overriden*/ void onSCS(unsigned char id, unsigned char charset); // Character Set Selection (SCS). Designate G(id) (G0...G3) Character Set (ISO 2022)
 	/*overriden*/ void onDECBI(); // Back Index, VT420 and up.
 	/*overriden*/ void onDECSC(); // Save cursor
 	/*overriden*/ void onDECRC(); // Restore cursor
@@ -192,8 +220,8 @@ protected:
 	/*overriden*/ void onDECKPAM(); // Application Keypad
 	/*overriden*/ void onDECKPNM(); // Normal Keypad
 	/*overriden*/ void onRIS(); // Full Reset
-	/*overriden*/ void onLS2(); // Invoke the G2 Character Set
-	/*overriden*/ void onLS3(); // Invoke the G3 Character Set
+	/*overriden*/ void onLS2(); // Invoke the G2 Character Set as GL.
+	/*overriden*/ void onLS3(); // Invoke the G3 Character Set as GL.
 	/*overriden*/ void onLS1R(); // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 	/*overriden*/ void onLS2R(); // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 	/*overriden*/ void onLS3R(); // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
@@ -356,6 +384,12 @@ private:
 	wxFont m_defaultFont, m_boldFont, m_underlineFont, m_boldUnderlineFont;
 	wxColour m_colours[8];
 	unsigned char  m_lastBackColor, m_lastForeColor, m_lastStyle;
+
+	wxTerminalCharacterSet m_charset; // Current input character set
+	std::vector<unsigned char> m_charBuffer; // Input character buffer (for multibyte chars). 
+	
+	const wxTerminalCharacterMap* m_Gx[4]; // G0...G3 character maps
+	unsigned short m_GL, m_GR; // Respectively 7-bit and 8-bit visible character set (values in 0...3).
 	
 	wxTimer* m_timer;    // Timer for i/o treatments.
 	wxOutputStream* m_outputStream;

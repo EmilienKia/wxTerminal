@@ -1081,19 +1081,19 @@ void TerminalParser::onESC(unsigned char command, unsigned char param)
 		}
 		break;
 	case '(': // Designate G0 charset
-		onDesignateG0(param);
+	    onSCS(0, param);
 	    break;
 	case ')': // Designate G1 charset
 	case '-':
-		onDesignateG1(param);
+	    onSCS(1, param);
 	    break;
 	case '*': // Designate G2 charset
 	case '.':
-		onDesignateG2(param);
+	    onSCS(2, param);
 	    break;
 	case '+': // Designate G3 charset
 	case '/':
-		onDesignateG3(param);
+	    onSCS(3, param);
 	    break;
 	default:
 		// Invalid, TODO should I call onESC(...) with one char ? 
