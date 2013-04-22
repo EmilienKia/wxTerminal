@@ -44,13 +44,11 @@ wxTerminalCharacter wxTerminalCharacter::DefaultCharacter = { 0, 0, wxTCS_Invisi
 //
 //
 
-void wxConsoleContent::setChar(wxPoint pos, wxUniChar c, unsigned char fore, unsigned char back, unsigned char style)
+void wxConsoleContent::setChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr)
 {
 	wxTerminalCharacter ch;
 	ch.c     = c;
-	ch.fore  = fore;
-	ch.back  = back;
-	ch.style = style;
+	ch.attr  = attr; 
 	setChar(pos, ch);
 }
 
@@ -661,9 +659,7 @@ void wxTerminalCtrl::CommonInit()
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
 	SetBackgroundColour(m_colours[0]);
 
-	m_lastBackColor = 0;
-	m_lastForeColor = 7;
-	m_lastStyle     = wxTCS_Normal;
+	m_currentAttributes = {7, 0, wxTCS_Normal};
 
 	m_caret = new wxCaret(this, GetCharSize());
 	m_caret->Show();
@@ -745,7 +741,7 @@ void wxTerminalCtrl::MoveCaret(int x, int y)
 
 void wxTerminalCtrl::SetChar(wxUniChar c)
 {
-	m_currentContent->setChar(ConsoleToHistoric(m_caretPos), c, m_lastForeColor, m_lastBackColor, m_lastStyle);
+	m_currentContent->setChar(ConsoleToHistoric(m_caretPos), c, m_currentAttributes);
 }
 
 
@@ -773,37 +769,37 @@ void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 				const wxTerminalCharacter &ch = line[i];
 
 				// Not shown so skip
-				if(ch.style & wxTCS_Invisible)
+				if(ch.attr.style & wxTCS_Invisible)
 					continue;
 
 				// Choose font
-				if(ch.style & wxTCS_Bold)
+				if(ch.attr.style & wxTCS_Bold)
 				{
-					if(ch.style & wxTCS_Underlined)
+					if(ch.attr.style & wxTCS_Underlined)
 						dc.SetFont(m_boldUnderlineFont);
 					else
 						dc.SetFont(m_boldFont);
 				}
 				else
 				{
-					if(ch.style & wxTCS_Underlined)
+					if(ch.attr.style & wxTCS_Underlined)
 						dc.SetFont(m_underlineFont);
 					else
 						dc.SetFont(m_defaultFont);
 				}
 
 				// Choose colors
-				if(ch.style & wxTCS_Inverse)
+				if(ch.attr.style & wxTCS_Inverse)
 				{
-					dc.SetBrush(wxBrush(m_colours[ch.fore]));
-					dc.SetTextBackground(m_colours[ch.fore]);
-					dc.SetTextForeground(m_colours[ch.back]);
+					dc.SetBrush(wxBrush(m_colours[ch.attr.fore]));
+					dc.SetTextBackground(m_colours[ch.attr.fore]);
+					dc.SetTextForeground(m_colours[ch.attr.back]);
 				}
 				else
 				{
-					dc.SetBrush(wxBrush(m_colours[ch.back]));
-					dc.SetTextBackground(m_colours[ch.back]);
-					dc.SetTextForeground(m_colours[ch.fore]);
+					dc.SetBrush(wxBrush(m_colours[ch.attr.back]));
+					dc.SetTextBackground(m_colours[ch.attr.back]);
+					dc.SetTextForeground(m_colours[ch.attr.fore]);
 				}
 
 				// Draw
@@ -1664,39 +1660,37 @@ void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Grap
 		switch(sgr)
 		{
 		case 0: // Default
-			m_lastForeColor = 7;
-			m_lastBackColor = 0;
-			m_lastStyle = wxTCS_Normal;
+			m_currentAttributes = {7, 0, wxTCS_Normal};
 			break;
 		case 1: // Bold
-			m_lastStyle |= wxTCS_Bold;
+			m_currentAttributes.style |= wxTCS_Bold;
 			break;
 		case 4: // Underline
-			m_lastStyle |= wxTCS_Underlined;
+			m_currentAttributes.style |= wxTCS_Underlined;
 			break;
 		case 5: // Blink
-			m_lastStyle |= wxTCS_Blink;
+			m_currentAttributes.style |= wxTCS_Blink;
 			break;
 		case 7: // Inverse
-			m_lastStyle |= wxTCS_Inverse;
+			m_currentAttributes.style |= wxTCS_Inverse;
 			break;
 		case 8: // Invisible (hidden)
-			m_lastStyle |= wxTCS_Invisible;
+			m_currentAttributes.style |= wxTCS_Invisible;
 			break;
 		case 22: // Normal (neither bold nor faint)
-			m_lastStyle &= ~wxTCS_Bold;
+			m_currentAttributes.style &= ~wxTCS_Bold;
 			break;
 		case 24: // Not underlined
-			m_lastStyle &= ~wxTCS_Underlined;
+			m_currentAttributes.style &= ~wxTCS_Underlined;
 			break;
 		case 25: // Steady (not blinking)
-			m_lastStyle &= ~wxTCS_Blink;
+			m_currentAttributes.style &= ~wxTCS_Blink;
 			break;
 		case 27: // Positive (not inverse)
-			m_lastStyle &= ~wxTCS_Inverse;
+			m_currentAttributes.style &= ~wxTCS_Inverse;
 			break;
 		case 28: // Visible (not hidden)
-				m_lastStyle &= ~wxTCS_Invisible;
+			m_currentAttributes.style &= ~wxTCS_Invisible;
 			break;
 		case 30: // Foreground black
 		case 31: // Foreground red
@@ -1706,10 +1700,10 @@ void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Grap
 		case 35: // Foreground purple
 		case 36: // Foreground cyan
 		case 37: // Foreground white
-			m_lastForeColor = sgr - 30; 
+			m_currentAttributes.fore = sgr - 30; 
 			break;
 		case 39: // Foreground default
-			m_lastForeColor = 7;
+			m_currentAttributes.fore = 7;
 			break;
 		case 40: // Background black
 		case 41: // Background red
@@ -1719,10 +1713,10 @@ void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Grap
 		case 45: // Background purple
 		case 46: // Background cyan
 		case 47: // Background white
-			m_lastBackColor = sgr - 40; 
+			m_currentAttributes.back = sgr - 40; 
 			break;
 		case 49: // ForegBackground default
-			m_lastBackColor = 0;
+			m_currentAttributes.back = 0;
 			break;
 		default:
 			printf("ApplySGR %d\n", sgr);

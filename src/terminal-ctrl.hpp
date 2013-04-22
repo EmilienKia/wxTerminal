@@ -46,13 +46,17 @@ enum wxTerminalCharacterStyle
 	//wxTCS_Selected   = 128 // wxTerminal specific
 };
 
-
-struct wxTerminalCharacter
+struct wxTerminalCharacterAttributes
 {
 	unsigned char fore;
 	unsigned char back;
-	unsigned char style;
+	unsigned char style; // From wxTerminalCharacterStyle
+};
+
+struct wxTerminalCharacter
+{
 	wxUniChar c;
+	wxTerminalCharacterAttributes attr;
 
 	static wxTerminalCharacter DefaultCharacter;
 };
@@ -75,7 +79,7 @@ public:
 	/**
 	 * Set a char at the specified position.
 	 */
-	virtual void setChar(wxPoint pos, wxUniChar c, unsigned char fore, unsigned char back, unsigned char style);
+	virtual void setChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr);
 
 	/**
 	 * Add an empty new line
@@ -411,7 +415,7 @@ private:
 
 	wxFont m_defaultFont, m_boldFont, m_underlineFont, m_boldUnderlineFont;
 	wxColour m_colours[8];
-	unsigned char  m_lastBackColor, m_lastForeColor, m_lastStyle;
+	wxTerminalCharacterAttributes m_currentAttributes;
 
 	wxTerminalCharacterSet m_charset; // Current input character set
 	wxTerminalCharacterDecoder m_mbdecoder; // Multibyte decoder (for UTF-x) 
