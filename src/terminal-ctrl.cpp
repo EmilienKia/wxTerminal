@@ -614,7 +614,6 @@ void wxTerminalCtrl::CommonInit()
 
 	// Set historic content as current (default behavior)
 	m_currentContent = m_historicContent;
-	m_isHistoric = true;
 
 	// Default character set
 	m_charset = wxTCSET_UTF_8;

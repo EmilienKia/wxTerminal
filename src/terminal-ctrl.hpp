@@ -397,7 +397,6 @@ private:
 	wxConsoleContent *m_historicContent;
 	wxConsoleContent *m_staticContent;
 	wxConsoleContent *m_currentContent;
-	bool m_isHistoric;
 
 	void GenerateFonts(const wxFont& font);
 	
