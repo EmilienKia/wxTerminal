@@ -104,6 +104,34 @@ enum wxTerminalCharacterSet
 };
 
 
+class wxTerminalCharacterDecoder
+{
+public:
+	wxTerminalCharacterDecoder();
+
+	void setCharacterSet(wxTerminalCharacterSet set);
+	wxTerminalCharacterSet getCharacterSet()const{return _set;}
+
+	bool add(unsigned char c, wxUniChar& ch);
+		
+protected:
+	wxTerminalCharacterSet _set;
+	unsigned long _buffer;
+
+	enum wxTerminalCharacterDecoderState
+	{
+		wxTCDSTATE_DEFAULT,
+		wxTCDSTATE_UTF8_2BYTES,
+		wxTCDSTATE_UTF8_3BYTES_1,
+		wxTCDSTATE_UTF8_3BYTES_2,
+		wxTCDSTATE_UTF8_4BYTES_1,
+		wxTCDSTATE_UTF8_4BYTES_2,
+		wxTCDSTATE_UTF8_4BYTES_3		
+	} _state;
+};
+
+
+
 class wxTerminalCharacterMap
 {
 public:
@@ -386,7 +414,7 @@ private:
 	unsigned char  m_lastBackColor, m_lastForeColor, m_lastStyle;
 
 	wxTerminalCharacterSet m_charset; // Current input character set
-	std::vector<unsigned char> m_charBuffer; // Input character buffer (for multibyte chars). 
+	wxTerminalCharacterDecoder m_mbdecoder; // Multibyte decoder (for UTF-x) 
 	
 	const wxTerminalCharacterMap* m_Gx[4]; // G0...G3 character maps
 	unsigned short m_GL, m_GR; // Respectively 7-bit and 8-bit visible character set (values in 0...3).

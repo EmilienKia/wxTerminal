@@ -82,6 +82,134 @@ void wxConsoleContent::ensureHasChar(size_t l, size_t c)
 		line.resize(c+1, wxTerminalCharacter::DefaultCharacter);
 }
 
+
+//
+//
+// wxTerminalCharacterDecoder
+//
+// Decode UTF-8 only at present day.
+//
+//
+wxTerminalCharacterDecoder::wxTerminalCharacterDecoder():
+_state(wxTCDSTATE_DEFAULT),
+_buffer(0)
+{
+}
+
+bool wxTerminalCharacterDecoder::add(unsigned char c, wxUniChar& ch)
+{
+	switch(_state)
+	{
+		case wxTCDSTATE_DEFAULT:
+		{
+			if( (c & 0x80) == 0 )  // UTF-8, first char == 0xxxxxxx
+			{
+				// Only one byte.
+				ch = wxUniChar(_buffer = (unsigned long)c);
+				return true;
+			}
+			else if( (c & 0xE0) == 0xC0 ) // UTF-8, first char = 110xxxxx
+			{
+				// Wait for two bytes.
+				_buffer = (c & 0x1F) << 6;
+				_state = wxTCDSTATE_UTF8_2BYTES;
+				return false;
+			}
+			else if( (c & 0xF0) == 0xE0 ) // UTF-8, first char = 1110xxxx
+			{
+				// Wait for two bytes.
+				_buffer = (c & 0x0F) << 12;
+				_state = wxTCDSTATE_UTF8_3BYTES_1;
+				return false;
+			}
+			else if( (c & 0xF8) == 0xF0 ) // UTF-8, first char = 11110xxx
+			{
+				// Wait for two bytes.
+				_buffer = (c & 0x07) << 18;
+				_state = wxTCDSTATE_UTF8_3BYTES_1;
+				return false;
+			}
+			else
+			{
+				// Bad encoding, reset !
+				ch = wxUniChar(_buffer = (unsigned long)c);
+				return true;
+			}
+			break;
+		}
+		case wxTCDSTATE_UTF8_2BYTES:
+		case wxTCDSTATE_UTF8_3BYTES_2:
+		case wxTCDSTATE_UTF8_4BYTES_3:
+		{
+			if( (c & 0xC0) == 0x80 )  // UTF-8, other char == 10xxxxxx
+			{
+				ch = wxUniChar( _buffer |= (unsigned long) (c & 0x3F) );
+				_state = wxTCDSTATE_DEFAULT;
+				return true;
+			}
+			else
+			{
+				// Bad encoding, reset !
+				// TODO WTF ?
+				_buffer = 0;
+				_state = wxTCDSTATE_DEFAULT;
+				return false;
+			}
+			break;
+		}
+		case wxTCDSTATE_UTF8_3BYTES_1:
+		case wxTCDSTATE_UTF8_4BYTES_2:
+		{
+			if( (c & 0xC0) == 0x80 )  // UTF-8, other char == 10xxxxxx
+			{
+				 _buffer |= (((unsigned long) (c & 0x3F)) << 6);
+				if(_state == wxTCDSTATE_UTF8_3BYTES_1)
+					_state = wxTCDSTATE_UTF8_3BYTES_2;
+				else
+					_state = wxTCDSTATE_UTF8_4BYTES_3;
+				return false;
+			}
+			else
+			{
+				// Bad encoding, reset !
+				// TODO WTF ?
+				_buffer = 0;
+				_state = wxTCDSTATE_DEFAULT;
+				return false;
+			}
+			break;
+		}
+		case wxTCDSTATE_UTF8_4BYTES_1:
+		{
+			if( (c & 0xC0) == 0x80 )  // UTF-8, other char == 10xxxxxx
+			{
+				 _buffer |= (((unsigned long) (c & 0x3F)) << 12);
+				_state = wxTCDSTATE_UTF8_4BYTES_2;
+				return false;
+			}
+			else
+			{
+				// Bad encoding, reset !
+				// TODO WTF ?
+				_buffer = 0;
+				_state = wxTCDSTATE_DEFAULT;
+				return false;
+			}
+			break;
+		}
+		default:
+		{
+			// Bad encoding, reset !
+			// TODO WTF ?
+			_buffer = 0;
+			_state = wxTCDSTATE_DEFAULT;
+			return false;
+		}
+		
+	}	
+	return false;
+}
+
 //
 //
 // wxTerminalCharacterMap
@@ -863,17 +991,11 @@ void wxTerminalCtrl::onPrintableChar(unsigned char c)
 			break;
 		case wxTCSET_UTF_8:
 		{
-			if(c & 0x80 == 0)
+			wxUniChar ch;
+			if(m_mbdecoder.add(c, ch))
 			{
-				// 7-bits representation only
-				SetChar(c);
+				SetChar(ch);
 				MoveCaret(1);
-			}
-			else
-			{
-				// TODO
-				SetChar(c);
-				MoveCaret(1);				
 			}
 			break;
 		}
