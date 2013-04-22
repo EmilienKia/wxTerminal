@@ -163,6 +163,19 @@ protected:
 };
 
 
+enum wxTerminalOptionFlags
+{
+	wxTOF_WRAPAROUND = 0,
+	wxTOF_REVERSE_WRAPAROUND,
+	wxTOF_ORIGINMODE,
+	wxTOF_AUTO_CARRIAGE_RETURN,
+	wxTOF_CURSOR_VISIBLE,
+	wxTOF_CURSOR_BLINK,
+	wxTOF_INSERT_MODE,
+	wxTOF_REVERSE_VIDEO
+};
+
+
 class wxTerminalCtrl: public wxWindow, protected TerminalParser
 {
 	wxDECLARE_EVENT_TABLE();
@@ -175,6 +188,32 @@ public:
         const wxSize &size=wxDefaultSize, long style=0, const wxString &name=wxTerminalCtrlNameStr);
 
 	wxSize GetClientSizeInChars()const{return m_consoleSize;}
+
+	void wrapAround(bool val);
+	bool wrapAround()const {return getOption(wxTOF_WRAPAROUND);}
+
+	void reverseWrapAround(bool val);
+	bool reverseWrapAround()const {return getOption(wxTOF_REVERSE_WRAPAROUND);}
+
+	void originMode(bool val);
+	bool originMode()const {return getOption(wxTOF_ORIGINMODE);}
+
+	void autoCarriageReturn(bool val);
+	bool autoCarriageReturn()const {return getOption(wxTOF_AUTO_CARRIAGE_RETURN);}
+
+	void cursorVisible(bool val);
+	bool cursorVisible()const {return getOption(wxTOF_CURSOR_VISIBLE);}
+
+	void cursorBlink(bool val);
+	bool cursorBlink()const {return getOption(wxTOF_CURSOR_BLINK);}
+
+	void insertMode(bool val);
+	bool insertMode()const {return getOption(wxTOF_INSERT_MODE);}
+
+	void reverseVideo(bool val);
+	bool reverseVideo()const {return getOption(wxTOF_REVERSE_VIDEO);}
+
+	bool getOption(wxTerminalOptionFlags opt)const{return (m_options & (1 << opt)) != 0;}
 
 	// Output stream where send user input.
 	wxOutputStream* GetOutputStream()const{return m_outputStream;}
@@ -421,6 +460,8 @@ private:
 	
 	const wxTerminalCharacterMap* m_Gx[4]; // G0...G3 character maps
 	unsigned short m_GL, m_GR; // Respectively 7-bit and 8-bit visible character set (values in 0...3).
+
+	unsigned int m_options; // Flags from wxTerminalOptionFlags
 	
 	wxTimer* m_timer;    // Timer for i/o treatments.
 	wxOutputStream* m_outputStream;

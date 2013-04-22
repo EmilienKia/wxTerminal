@@ -678,6 +678,72 @@ void wxTerminalCtrl::GenerateFonts(const wxFont& font)
 	m_boldUnderlineFont = m_boldFont.Underlined();
 }
 
+
+void wxTerminalCtrl::wrapAround(bool val)
+{
+	m_options = (m_options & ~wxTOF_WRAPAROUND);
+	if(val)
+		m_options |=  wxTOF_WRAPAROUND;
+}
+
+void wxTerminalCtrl::reverseWrapAround(bool val)
+{
+	m_options = (m_options & ~wxTOF_REVERSE_WRAPAROUND);
+	if(val)
+		m_options |=  wxTOF_REVERSE_WRAPAROUND;
+}
+
+void wxTerminalCtrl::originMode(bool val)
+{
+	m_options = (m_options & ~wxTOF_ORIGINMODE);
+	if(val)
+		m_options |=  wxTOF_ORIGINMODE;
+
+	// TODO
+	// setCursorPosition(0,0);
+}
+
+void wxTerminalCtrl::autoCarriageReturn(bool val)
+{
+	m_options = (m_options & ~wxTOF_AUTO_CARRIAGE_RETURN);
+	if(val)
+		m_options |=  wxTOF_AUTO_CARRIAGE_RETURN;
+}
+
+void wxTerminalCtrl::cursorVisible(bool val)
+{
+	m_options = (m_options & ~wxTOF_CURSOR_VISIBLE);
+	if(val)
+		m_options |=  wxTOF_CURSOR_VISIBLE;
+
+	// TODO
+}
+
+void wxTerminalCtrl::cursorBlink(bool val)
+{
+	m_options = (m_options & ~wxTOF_CURSOR_BLINK);
+	if(val)
+		m_options |=  wxTOF_CURSOR_BLINK;
+
+	// TODO
+}
+
+void wxTerminalCtrl::insertMode(bool val)
+{
+	m_options = (m_options & ~wxTOF_INSERT_MODE);
+	if(val)
+		m_options |=  wxTOF_INSERT_MODE;
+}
+
+void wxTerminalCtrl::reverseVideo(bool val)
+{
+	m_options = (m_options & ~wxTOF_REVERSE_VIDEO);
+	if(val)
+		m_options |=  wxTOF_REVERSE_VIDEO;
+
+	// TODO
+}
+
 wxSize wxTerminalCtrl::GetCharSize(wxChar c)const
 {
 	wxSize sz;
