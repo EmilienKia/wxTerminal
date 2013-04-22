@@ -52,7 +52,7 @@ struct wxTerminalCharacter
 	unsigned char fore;
 	unsigned char back;
 	unsigned char style;
-	wxChar c;
+	wxUniChar c;
 
 	static wxTerminalCharacter DefaultCharacter;
 };
@@ -75,7 +75,7 @@ public:
 	/**
 	 * Set a char at the specified position.
 	 */
-	virtual void setChar(wxPoint pos, wxChar c, unsigned char fore, unsigned char back, unsigned char style);
+	virtual void setChar(wxPoint pos, wxUniChar c, unsigned char fore, unsigned char back, unsigned char style);
 
 	/**
 	 * Add an empty new line
@@ -192,7 +192,7 @@ protected:
 	void Append(const unsigned char* buff, size_t sz);
 
 	/** Set a character at the specified position (console coordinates). */
-	void SetChar(wxChar c);
+	void SetChar(wxUniChar c);
 
 	
 	/** Recompute scroll bar states (size and pos) from console size and historic position and size.*/ 

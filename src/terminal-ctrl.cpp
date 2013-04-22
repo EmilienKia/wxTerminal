@@ -44,7 +44,7 @@ wxTerminalCharacter wxTerminalCharacter::DefaultCharacter = { 0, 0, wxTCS_Invisi
 //
 //
 
-void wxConsoleContent::setChar(wxPoint pos, wxChar c, unsigned char fore, unsigned char back, unsigned char style)
+void wxConsoleContent::setChar(wxPoint pos, wxUniChar c, unsigned char fore, unsigned char back, unsigned char style)
 {
 	wxTerminalCharacter ch;
 	ch.c     = c;
@@ -743,7 +743,7 @@ void wxTerminalCtrl::MoveCaret(int x, int y)
 	SetCaretPosition(pos);
 }
 
-void wxTerminalCtrl::SetChar(wxChar c)
+void wxTerminalCtrl::SetChar(wxUniChar c)
 {
 	m_currentContent->setChar(ConsoleToHistoric(m_caretPos), c, m_lastForeColor, m_lastBackColor, m_lastStyle);
 }
