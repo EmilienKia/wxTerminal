@@ -29,10 +29,12 @@
 extern wxString wxTerminalCtrlNameStr;
 
 struct wxTerminalCharacter;
-class wxConsoleContent;
+class wxTerminalContent;
 class wxTerminalCtrl;
 
-
+/**
+ * Character presentational style.
+ */
 enum wxTerminalCharacterStyle
 {
 	wxTCS_Normal     = 0,
@@ -46,6 +48,9 @@ enum wxTerminalCharacterStyle
 	//wxTCS_Selected   = 128 // wxTerminal specific
 };
 
+/**
+ * Character presentational attributes.
+ */
 struct wxTerminalCharacterAttributes
 {
 	unsigned char fore;
@@ -53,6 +58,10 @@ struct wxTerminalCharacterAttributes
 	unsigned char style; // From wxTerminalCharacterStyle
 };
 
+/**
+ * Represent a terminal character:
+ * an unicode character with its presentational attributes.
+ */
 struct wxTerminalCharacter
 {
 	wxUniChar c;
@@ -61,31 +70,35 @@ struct wxTerminalCharacter
 	static wxTerminalCharacter DefaultCharacter;
 };
 
-
+/**
+ * A line of characters.
+ */
 typedef std::vector<wxTerminalCharacter> wxTerminalLine;
 
 /**
- * Represent the content of a text console.
- * It is the base class for consoles with or without historic.
- * It is a vector of terminal lines. 
+ * Represent the content of a terminal.
+ * It is a vector of terminal lines withoutknowledge of scrolling.
+ * It just verify that the slots are available.
+ * It doesnt do any character validation.
  */
-class wxConsoleContent: public std::vector<wxTerminalLine>
+class wxTerminalContent: public std::vector<wxTerminalLine>
 {
 public:
 	/**
 	 * Set a char at the specified position.
 	 */
 	void setChar(wxPoint pos, wxTerminalCharacter c);
+
 	/**
-	 * Set a char at the specified position.
+	 * Insert a char at the specified position.
 	 */
-	virtual void setChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr);
+	void insertChar(wxPoint pos, wxTerminalCharacter c);
 
 	/**
 	 * Add an empty new line
 	 */
 	virtual void addNewLine();
-	
+
 	/**
 	 * Ensure that the specified line is available in history, create it if needed.
 	 */
@@ -95,10 +108,88 @@ public:
 	 * Ensure that the specified character is available in history, create it if needed.
 	 */
 	virtual void ensureHasChar(size_t l, size_t c);
+};
+
+
+/**
+ * Represent a screen of a terminal.
+ * Has the notion of cursor position and scrolling.
+ */
+class wxTerminalScreen
+{
+public:
+	wxTerminalScreen();
+
+	/** Retrieve a line, from its screen position.*/
+	wxTerminalLine& getLine(int line){ return _content[line+_originPosition.y]; }
+	wxTerminalLine& operator[](int line){ return _content[line+_originPosition.y]; }
+	
+	/** Retrieve a line, from its screen position.*/
+	const wxTerminalLine& getLine(int line)const{ return _content[line+_originPosition.y]; }
+	const wxTerminalLine& operator[](int line)const{ return _content[line+_originPosition.y]; }
+
+	/** Retrieve a char, from its screen position.*/
+	wxTerminalCharacter& getChar(int line, int col){ return getLine(line)[col+_originPosition.x]; }
+	/** Retrieve a char, from its screen position.*/
+	const wxTerminalCharacter& getChar(int line, int col)const{ return getLine(line)[col+_originPosition.x]; }
+
+	/** Retrieve the number of rows in content buffer.*/
+	size_t getHistoryRowCount()const{return _content.size();}
+
+	/** Retrieve the number of rows in screen (after origin in history).*/
+	size_t getScreenRowCount()const{return _content.size() >= _originPosition.y ? _content.size() - _originPosition.y : 0;}
+
+	/** Retrieve the caret (textual cursor) position. */
+	wxPoint getCaretPosition()const{return _caretPosition;}
+	/** Set the caret (textual cursor) position. */
+	void setCaretPosition(wxPoint pos);
+	
+	/** Set a char at specified position, overriding existing if any. */
+	void setChar(wxPoint pos, wxTerminalCharacter c);
+	/** Set a char at specified position, overriding existing if any. */
+	void setChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr);
+	/** Insert a char just before the specified position. */
+	void insertChar(wxPoint pos, wxTerminalCharacter c);
+	/** Insert a char just before the specified position. */
+	void insertChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr);
+
+	/** Insert a char a caret position and move caret by one.*/
+	void insertChar(wxUniChar c, const wxTerminalCharacterAttributes& attr);
+	/** Overwrite a char a caret position and move caret by one.*/
+	void overwriteChar(wxUniChar c, const wxTerminalCharacterAttributes& attr);
+	
+	/** Move origin in history. */
+	void moveOrigin(int lines);
+	/** Set origin in history. */
+	void setOrigin(int lines);
+
+	/** Retrieve the screen shown size (in chars). */
+	wxSize getScreenSize()const{return _size;}
+	/** Modify the screen size (in chars). */
+	void setScreenSize(wxSize sz){_size = sz;}
+
+	/** Move caret by specified cols and lines.*/
+	void moveCaret(int lines, int cols);
+
+	/** Move caret to specified col in current line. */
+	void setCaretColumn(int col);
 	
 protected:
+	/** Content of terminal screen, with potential history.*/
+	wxTerminalContent _content;
 
+	/** Position of origin (firstshown char of screen, top-left), in historic position. */  
+	wxPoint _originPosition;
+
+	/** Caret position, relative to origin. */
+	wxPoint _caretPosition;
+
+	/** Screen shwon size (in chars). */
+	wxSize _size;
+	
 };
+
+
 
 
 enum wxTerminalCharacterSet
@@ -215,6 +306,18 @@ public:
 
 	bool getOption(wxTerminalOptionFlags opt)const{return (m_options & (1 << opt)) != 0;}
 
+	/** Process new line ('\n' character). */
+	void newLine();
+	/** Process line feed (0x0A): move down caret (keep col unchanged). */
+	void lineFeed();
+	/** Process form feed (0x0C): if autoCarriageReturn : new line, else line feed. */
+	void formFeed();
+	
+	
+	
+	/** Test if shown screen is primary. */
+	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}
+	
 	// Output stream where send user input.
 	wxOutputStream* GetOutputStream()const{return m_outputStream;}
 	void SetOutputStream(wxOutputStream* out){m_outputStream = out;}
@@ -236,33 +339,12 @@ protected:
 
 	/** Set a character at the specified position (console coordinates). */
 	void SetChar(wxUniChar c);
-
 	
 	/** Recompute scroll bar states (size and pos) from console size and historic position and size.*/ 
 	void UpdateScrollBars();
 
-	/** Move the caret to the specified position. */
-	void SetCaretPosition(int x, int y){SetCaretPosition(wxPoint(x, y));}
-	/**
-	 * Move the caret (console textual cursor) to the specified position.
-     * \param pos Caret absolute position in console coordinates (visible, in chars).
-	 */
-	void SetCaretPosition(wxPoint pos);
-	/** Move the caret of specified offset (in chars). */
-	void MoveCaret(int x=0, int y=0);
-
-	/** Retrieve the caret (console textual cursor) position. */
-	const wxPoint& GetCaretPosition()const{return m_caretPos;}
-	/** Retrieve the caret (console textual cursor) position in historic coordinates. */
-	wxPoint GetCaretPosInBuffer()const;
-
-	/** Translate Console coordinates to Historic coordinates.*/
-	int ConsoleToHistoric(int row)const;
-	wxPoint ConsoleToHistoric(wxPoint pt)const{return wxPoint(pt.x, ConsoleToHistoric(pt.y));}
-	
-	/** Translate Historic coordinates to Console coordinates.*/
-	int HistoricToConsole(int row)const;
-	wxPoint HistoricToConsole(wxPoint pt)const{return wxPoint(pt.x, HistoricToConsole(pt.y));}
+	/** Update caret widget position. */
+	void UpdateCaret();
 	
 	/**
 	 * Declaration of TerminalParser interface abstract functions
@@ -433,9 +515,9 @@ protected:
 	/** \} */
 	
 private:
-	wxConsoleContent *m_historicContent;
-	wxConsoleContent *m_staticContent;
-	wxConsoleContent *m_currentContent;
+	wxTerminalScreen* m_primaryScreen;
+	wxTerminalScreen* m_alternateScreen;
+	wxTerminalScreen* m_currentScreen;
 
 	void GenerateFonts(const wxFont& font);
 	
@@ -446,10 +528,8 @@ private:
 	void OnTimer(wxTimerEvent& event);
 	
 	wxSize   m_consoleSize; // Size of console in chars
-	wxPoint  m_consolePos;  // Position of consol in historic.
 	
 	wxCaret* m_caret;       // Caret pseudo-widget instance.
-	wxPoint  m_caretPos;    // Position of caret (console cursor) in chars
 
 	wxFont m_defaultFont, m_boldFont, m_underlineFont, m_boldUnderlineFont;
 	wxColour m_colours[8];

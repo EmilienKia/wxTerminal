@@ -40,37 +40,35 @@ wxTerminalCharacter wxTerminalCharacter::DefaultCharacter = { 0, 0, wxTCS_Invisi
 
 //
 //
-// wxConsoleContent
+// wxTerminalContent
 //
 //
 
-void wxConsoleContent::setChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr)
-{
-	wxTerminalCharacter ch;
-	ch.c     = c;
-	ch.attr  = attr; 
-	setChar(pos, ch);
-}
-
-
-void wxConsoleContent::setChar(wxPoint pos, wxTerminalCharacter c)
+void wxTerminalContent::setChar(wxPoint pos, wxTerminalCharacter c)
 {
 	ensureHasChar(pos.y, pos.x);
 	at(pos.y)[pos.x] = c;
 }
 
-void wxConsoleContent::addNewLine()
+void wxTerminalContent::insertChar(wxPoint pos, wxTerminalCharacter c)
+{
+	ensureHasChar(pos.y, pos.x);
+	wxTerminalLine& line = at(pos.y);
+	line.insert(line.begin()+pos.x, c);
+}
+
+void wxTerminalContent::addNewLine()
 {
 	push_back(wxTerminalLine());
 }
 
-void wxConsoleContent::ensureHasLine(size_t l)
+void wxTerminalContent::ensureHasLine(size_t l)
 {
 	if(size()<=l)
 		resize(l+1);
 }
 
-void wxConsoleContent::ensureHasChar(size_t l, size_t c)
+void wxTerminalContent::ensureHasChar(size_t l, size_t c)
 {
 	ensureHasLine(l);
 	
@@ -78,6 +76,114 @@ void wxConsoleContent::ensureHasChar(size_t l, size_t c)
 
 	if(line.size()<=c)
 		line.resize(c+1, wxTerminalCharacter::DefaultCharacter);
+}
+
+//
+//
+// wxTerminalScreen
+//
+//
+
+wxTerminalScreen::wxTerminalScreen():
+_originPosition(0, 0),
+_caretPosition(0,0),
+_size(80, 25)
+{
+}
+
+void wxTerminalScreen::setChar(wxPoint pos, wxTerminalCharacter c)
+{
+	_content.setChar(pos + _originPosition, c);
+}
+
+void wxTerminalScreen::setChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr)
+{
+	wxTerminalCharacter ch;
+	ch.c     = c;
+	ch.attr  = attr;
+	setChar(pos, ch);
+}
+
+void wxTerminalScreen::insertChar(wxPoint pos, wxTerminalCharacter c)
+{
+	_content.insertChar(pos + _originPosition, c);
+	// TODO Validate content here ? (split long lines ?)
+}
+
+void wxTerminalScreen::insertChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr)
+{
+	wxTerminalCharacter ch;
+	ch.c     = c;
+	ch.attr  = attr;
+	insertChar(pos, ch);
+}
+
+void wxTerminalScreen::setCaretPosition(wxPoint pos)
+{
+	_caretPosition = pos;
+}
+
+void wxTerminalScreen::moveOrigin(int lines)
+{
+	_originPosition.y += lines;
+	if(_originPosition.y<0) // Sanitize to 0 (origin cannot be before begining of history).
+		_originPosition.y = 0;
+}
+
+void wxTerminalScreen::setOrigin(int lines)
+{
+	_originPosition.y = lines;
+	if(_originPosition.y<0) // Sanitize to 0 (origin cannot be before begining of history).
+		_originPosition.y = 0;
+}
+
+void wxTerminalScreen::insertChar(wxUniChar c, const wxTerminalCharacterAttributes& attr)
+{
+	setChar(_caretPosition, c, attr);
+	moveCaret(0, 1);
+}
+
+void wxTerminalScreen::overwriteChar(wxUniChar c, const wxTerminalCharacterAttributes& attr)
+{
+	setChar(_caretPosition, c, attr);
+	moveCaret(0, 1);
+}
+
+void wxTerminalScreen::moveCaret(int lines, int cols)
+{
+	_caretPosition.y += lines;
+	_caretPosition.x += cols;
+
+	if(cols>0)
+	{
+		while(_caretPosition.x >= _size.x)
+		{
+			_caretPosition.x -= _size.x;
+			_caretPosition.y ++;
+		}
+	}
+	else // if(cols<0)
+	{
+		while(_caretPosition.x < 0)
+		{
+			_caretPosition.x += _size.x;
+			_caretPosition.y --;
+		}
+	}
+
+	// TODO Ensure caret is at a valid place in history (no underflow)
+}
+
+void wxTerminalScreen::setCaretColumn(int col)
+{
+	wxTerminalLine& line = getLine(getCaretPosition().y);
+
+	if(line.size() == 0)
+		col = 0;
+	else if(col<0 || col>= line.size())
+		col = line.size() - 1;
+
+	_caretPosition.x = col;
 }
 
 
@@ -578,9 +684,9 @@ wxTerminalCtrl::wxTerminalCtrl(wxWindow *parent, wxWindowID id, const wxPoint &p
 wxWindow(parent, id, pos, size, style|wxVSCROLL/*|wxHSCROLL*/, name),
 m_inputStream(NULL),
 m_outputStream(NULL),
-m_historicContent(NULL),
-m_staticContent(NULL),
-m_currentContent(NULL)
+m_primaryScreen(NULL),
+m_alternateScreen(NULL),
+m_currentScreen(NULL)
 {
 	CommonInit();
 }
@@ -588,9 +694,9 @@ m_currentContent(NULL)
 wxTerminalCtrl::wxTerminalCtrl():
 m_inputStream(NULL),
 m_outputStream(NULL),
-m_historicContent(NULL),
-m_staticContent(NULL),
-m_currentContent(NULL)
+m_primaryScreen(NULL),
+m_alternateScreen(NULL),
+m_currentScreen(NULL)
 {
 }
 
@@ -609,11 +715,10 @@ bool wxTerminalCtrl::Create(wxWindow *parent, wxWindowID id, const wxPoint &pos,
 
 void wxTerminalCtrl::CommonInit()
 {
-	m_historicContent = new wxConsoleContent;
-	m_staticContent = new wxConsoleContent;
-
-	// Set historic content as current (default behavior)
-	m_currentContent = m_historicContent;
+	// Initialize screens
+	m_primaryScreen = new wxTerminalScreen;
+	m_alternateScreen = new wxTerminalScreen;
+	m_currentScreen = m_primaryScreen; //  Default is primary ;)
 
 	// Default character set
 	m_charset = wxTCSET_UTF_8;
@@ -652,7 +757,6 @@ void wxTerminalCtrl::CommonInit()
 */
 
 	m_consoleSize = wxSize(80, 25);
-	m_consolePos  = wxPoint(0, 0);
 
 	GenerateFonts(wxFont(10, wxFONTFAMILY_TELETYPE));
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
@@ -662,9 +766,9 @@ void wxTerminalCtrl::CommonInit()
 
 	m_caret = new wxCaret(this, GetCharSize());
 	m_caret->Show();
-	SetCaretPosition(0, 0);
 
 	UpdateScrollBars();
+	UpdateCaret();
 	
 	m_timer = new wxTimer(this);
 	m_timer->Start(10);
@@ -751,64 +855,43 @@ wxSize wxTerminalCtrl::GetCharSize(wxChar c)const
 	return sz;
 }
 
-int wxTerminalCtrl::ConsoleToHistoric(int row)const
+void wxTerminalCtrl::UpdateCaret()
 {
-	return row + m_consolePos.y;
-}
-
-int wxTerminalCtrl::HistoricToConsole(int row)const
-{
-	return row - m_consolePos.y;
-}
-
-wxPoint wxTerminalCtrl::GetCaretPosInBuffer()const
-{
-	return ConsoleToHistoric(GetCaretPosition());
-}
-
-void wxTerminalCtrl::SetCaretPosition(wxPoint pos)
-{
-	// Move caret position
-	if(pos.x==-1)
-		pos.x = m_caretPos.x;
-	if(pos.y==-1)
-		pos.y = m_caretPos.y;
-	m_caretPos = pos;
- 
-
-	// Move caret pseudo-widget in consequence
-//printf("SetCaretPosition %d,%d\n", m_caretPos.x, m_caretPos.y);
+	wxPoint pos = m_currentScreen->getCaretPosition();
 	wxSize sz = GetCharSize();
 	m_caret->Move(sz.x*pos.x, sz.y*pos.y);
 }
 
-void wxTerminalCtrl::MoveCaret(int x, int y)
-{
-	wxPoint pos = m_caretPos + wxSize(x, y);
-
-	// Scroll vertically to make caret horizontally visible
-	int scroll = 0;
-	while(pos.x >= m_consoleSize.x)
-	{
-		++scroll;
-		++pos.y;
-		pos.x -= m_consoleSize.x;
-	}
-	while(pos.x < 0)
-	{
-		--scroll;
-		--pos.y;
-		pos.x += m_consoleSize.x;
-	}
-
-	SetCaretPosition(pos);
-}
-
 void wxTerminalCtrl::SetChar(wxUniChar c)
 {
-	m_currentContent->setChar(ConsoleToHistoric(m_caretPos), c, m_currentAttributes);
+	if(insertMode())
+		m_currentScreen->insertChar(c, m_currentAttributes);
+	else
+		m_currentScreen->overwriteChar(c, m_currentAttributes);
+
+	// TODO add automatic scroll
 }
 
+void wxTerminalCtrl::newLine()
+{
+	m_currentScreen->setCaretColumn(0);
+	m_currentScreen->moveCaret(1, 0);
+}
+
+void wxTerminalCtrl::lineFeed()
+{
+	int col = m_currentScreen->getCaretPosition().x;
+	newLine();
+	m_currentScreen->setCaretColumn(col);
+}
+
+void wxTerminalCtrl::formFeed()
+{
+	if(autoCarriageReturn())
+		newLine();
+	else
+		lineFeed();
+}
 
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 {
@@ -822,72 +905,65 @@ void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 	dc.SetBrush(wxBrush(*wxBLACK));
 	dc.SetPen(wxNullPen);
 	dc.DrawRectangle(0, 0, clientSz.x, clientSz.y);
-	
-	wxConsoleContent* content = m_currentContent;
-	if(content)
+
+	for(size_t n=0; n<clchSz.y && n<m_currentScreen->getScreenRowCount(); n++)
 	{
-		for(size_t n=0, l=m_consolePos.y; n<clchSz.y && l<content->size(); n++, l++)
+		const wxTerminalLine& line = m_currentScreen->getLine(n);
+		for(size_t i=0; i<line.size(); i++)
 		{
-			const wxTerminalLine& line = content->at(l);
-			for(size_t i=0; i<line.size(); i++)
+			const wxTerminalCharacter &ch = line[i];
+
+			// Not shown so skip
+			if(ch.attr.style & wxTCS_Invisible)
+				continue;
+
+			// Choose font
+			if(ch.attr.style & wxTCS_Bold)
 			{
-				const wxTerminalCharacter &ch = line[i];
-
-				// Not shown so skip
-				if(ch.attr.style & wxTCS_Invisible)
-					continue;
-
-				// Choose font
-				if(ch.attr.style & wxTCS_Bold)
-				{
-					if(ch.attr.style & wxTCS_Underlined)
-						dc.SetFont(m_boldUnderlineFont);
-					else
-						dc.SetFont(m_boldFont);
-				}
+				if(ch.attr.style & wxTCS_Underlined)
+					dc.SetFont(m_boldUnderlineFont);
 				else
-				{
-					if(ch.attr.style & wxTCS_Underlined)
-						dc.SetFont(m_underlineFont);
-					else
-						dc.SetFont(m_defaultFont);
-				}
-
-				// Choose colors
-				if(ch.attr.style & wxTCS_Inverse)
-				{
-					dc.SetBrush(wxBrush(m_colours[ch.attr.fore]));
-					dc.SetTextBackground(m_colours[ch.attr.fore]);
-					dc.SetTextForeground(m_colours[ch.attr.back]);
-				}
-				else
-				{
-					dc.SetBrush(wxBrush(m_colours[ch.attr.back]));
-					dc.SetTextBackground(m_colours[ch.attr.back]);
-					dc.SetTextForeground(m_colours[ch.attr.fore]);
-				}
-
-				// Draw
-				dc.DrawRectangle(i*charSz.x, n*charSz.y, charSz.x, charSz.y);
-				dc.DrawText(ch.c, i*charSz.x, n*charSz.y);	
+					dc.SetFont(m_boldFont);
 			}
+			else
+			{
+				if(ch.attr.style & wxTCS_Underlined)
+					dc.SetFont(m_underlineFont);
+				else
+					dc.SetFont(m_defaultFont);
+			}
+
+			// Choose colors
+			if(ch.attr.style & wxTCS_Inverse)
+			{
+				dc.SetBrush(wxBrush(m_colours[ch.attr.fore]));
+				dc.SetTextBackground(m_colours[ch.attr.fore]);
+				dc.SetTextForeground(m_colours[ch.attr.back]);
+			}
+			else
+			{
+				dc.SetBrush(wxBrush(m_colours[ch.attr.back]));
+				dc.SetTextBackground(m_colours[ch.attr.back]);
+				dc.SetTextForeground(m_colours[ch.attr.fore]);
+			}
+
+			// Draw
+			dc.DrawRectangle(i*charSz.x, n*charSz.y, charSz.x, charSz.y);
+			dc.DrawText(ch.c, i*charSz.x, n*charSz.y);
 		}
 	}
 }
 
 void wxTerminalCtrl::OnScroll(wxScrollWinEvent& event)
 {
-	// Save aboslute historic caret position (before console scroll)
-	wxPoint carpos = ConsoleToHistoric(m_caretPos);
-	
 	if(event.GetOrientation() == wxVERTICAL)
 	{
-		m_consolePos.y = event.GetPosition();
+		m_currentScreen->setOrigin(event.GetPosition());
 	}
 
 	// Apply caret position (after scrolling)
-	SetCaretPosition(HistoricToConsole(carpos));
-	
+	UpdateCaret();
+
 	Refresh();
 	event.Skip();
 }
@@ -898,16 +974,16 @@ void wxTerminalCtrl::OnSize(wxSizeEvent& event)
 	wxSize ch = GetCharSize();
 	m_consoleSize = wxSize(sz.x/ch.x, sz.y/ch.y);
 	
+	m_primaryScreen->setScreenSize(m_consoleSize);
+	m_alternateScreen->setScreenSize(m_consoleSize);
+	
 	UpdateScrollBars();
 }
 
 void wxTerminalCtrl::UpdateScrollBars()
 {
-	wxPoint pos = ConsoleToHistoric(m_caretPos);
-
-	SetScrollbar(wxVERTICAL, GetScrollPos(wxVERTICAL), m_consoleSize.y, m_currentContent->size());
-	
-	SetCaretPosition(HistoricToConsole(pos));
+	SetScrollbar(wxVERTICAL, GetScrollPos(wxVERTICAL), m_consoleSize.y, m_currentScreen->getHistoryRowCount());
+	UpdateCaret();
 }
 
 void wxTerminalCtrl::OnChar(wxKeyEvent& event)
@@ -1048,7 +1124,6 @@ void wxTerminalCtrl::onPrintableChar(unsigned char c)
 	{
 		case wxTCSET_ISO_8859_1:
 			SetChar(c);
-			MoveCaret(1);
 			break;
 		case wxTCSET_UTF_8:
 		{
@@ -1056,7 +1131,6 @@ void wxTerminalCtrl::onPrintableChar(unsigned char c)
 			if(m_mbdecoder.add(c, ch))
 			{
 				SetChar(ch);
-				MoveCaret(1);
 			}
 			break;
 		}
@@ -1232,15 +1306,16 @@ void wxTerminalCtrl::onACK()  // 0x06
 	std::cout << "onACK" << std::endl;
 }
 
-void wxTerminalCtrl::onBEL()  // 0x07 -- Mostly done
+void wxTerminalCtrl::onBEL()  // 0x07
 {
 	wxBell();
-	printf("Bell !!!\n");
+	std::cout << "onBEL" << std::endl;
 }
 
-void wxTerminalCtrl::onBS()   // 0x08 -- Done
+void wxTerminalCtrl::onBS()   // 0x08 - BACK SPACE
 {
-	MoveCaret(-1);
+	// TODO Is it enought ? Must I verify if in the first column ? Must I remove old content ?
+	m_currentScreen->moveCaret(0, -1);
 }
 
 void wxTerminalCtrl::onHT()   // 0x09
@@ -1248,26 +1323,29 @@ void wxTerminalCtrl::onHT()   // 0x09
 	std::cout << "onHT" << std::endl;
 }
 
-void wxTerminalCtrl::onLF()   // 0x0A - LINE FEED -- Done
+void wxTerminalCtrl::onLF()   // 0x0A - LINE FEED
 {
 	SetChar(0x0A);
-	SetCaretPosition(0, GetCaretPosition().y+1);
+	formFeed(); // Do form feed (instead of line feed) processing accordingly with autoCarriageReturn
 }
 
-void wxTerminalCtrl::onVT()   // 0x0B
+void wxTerminalCtrl::onVT()   // 0x0B - VERTICAL TAB
 {
 	std::cout << "onVT" << std::endl;
+	formFeed(); // Processed as LINE FEED
 }
 
 void wxTerminalCtrl::onFF()   // 0x0C
 {
 	std::cout << "onFF" << std::endl;
+	formFeed();
 }
 
 void wxTerminalCtrl::onCR()   // 0x0D - CARIAGE RETURN -- Done
 {
 	SetChar(0x0D);
-	SetCaretPosition(0, GetCaretPosition().y+1);
+//	m_currentScreen->setCaretColumn(0);
+// TODO	SetCaretPosition(0, GetCaretPosition().y+1);
 }
 
 void wxTerminalCtrl::onSO()   // 0x0E
@@ -1517,12 +1595,12 @@ void wxTerminalCtrl::onCPL(unsigned short nb) // Cursor Preceding Line P s Times
 
 void wxTerminalCtrl::onCHA(unsigned short nb) // Moves the cursor to column n. -- Done
 {
-	SetCaretPosition(nb - 1, GetCaretPosition().y);
+// TODO	SetCaretPosition(nb - 1, GetCaretPosition().y);
 }
 
 void wxTerminalCtrl::onCUP(unsigned short row, unsigned short col) // Moves the cursor to row n, column m -- Done
 {
-	SetCaretPosition(col - 1, row - 1);
+// TODO	SetCaretPosition(col - 1, row - 1);
 }
 
 void wxTerminalCtrl::onCHT(unsigned short nb) // Cursor Forward Tabulation P s tab stops (default = 1)
@@ -1533,7 +1611,7 @@ void wxTerminalCtrl::onCHT(unsigned short nb) // Cursor Forward Tabulation P s t
 
 void wxTerminalCtrl::onED(unsigned short opt) // Clears part of the screen. -- Mostly done
 {
-	wxPoint pos = GetCaretPosInBuffer();
+/*	wxPoint pos = GetCaretPosInBuffer();
 	if(opt==0) // Erase Below
 	{
 std::cout << "Erase below" << std::endl;
@@ -1563,7 +1641,8 @@ std::cout << "Erase All" << std::endl;
 	{
 std::cout << "Erase saved lines (xterm)" << std::endl;
 		 // TODO
-	}	
+	}
+*/
 }
 
 void wxTerminalCtrl::onDECSED(unsigned short opt)  // Erase in Display. 0 → Selective Erase Below (default). 1 → Selective Erase Above. 2 → Selective Erase All. 3 → Selective Erase Saved Lines (xterm).
@@ -1573,14 +1652,14 @@ void wxTerminalCtrl::onDECSED(unsigned short opt)  // Erase in Display. 0 → Se
 
 void wxTerminalCtrl::onEL(unsigned short opt) // Erases part of the line. -- Mostly done
 {
-	wxPoint pos = GetCaretPosInBuffer();
+/*	wxPoint pos = GetCaretPosInBuffer();
 	wxTerminalLine& line = m_currentContent->at(pos.y);
 	if(opt==0) // Clear caret and after
 		line.erase(line.begin()+pos.x, line.end());
 	else if(opt==1) // Clear caret and before
 		{} // TODO
 	else// Clear caret line
-		line.clear();
+		line.clear();*/
 }
 
 void wxTerminalCtrl::onDECSEL(unsigned short nb)  // Erase in Line. 0 → Selective Erase to Right (default). 1 → Selective Erase to Left. 2 → Selective Erase All.
