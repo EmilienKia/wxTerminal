@@ -864,6 +864,9 @@ void wxTerminalCtrl::CommonInit()
 
 	m_consoleSize = wxSize(80, 25);
 
+	m_tabWidth = 8;
+	setDefaultTabStops();
+
 	GenerateFonts(wxFont(10, wxFONTFAMILY_TELETYPE));
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
 	SetBackgroundColour(m_colours[0]);
@@ -1108,6 +1111,73 @@ void wxTerminalCtrl::deleteLines(unsigned int count)
 {
 	m_currentScreen->deleteLinesAtCarret(count);
 }
+
+
+
+void wxTerminalCtrl::forwardTabStops()
+{
+	size_t col = m_currentScreen->getCaretAbsolutePosition().x;
+	for(std::set<unsigned int>::const_iterator it=m_tabstops.begin(); it!=m_tabstops.end(); ++it)
+	{
+		if(*it>col)
+		{
+			setCursorColumn(*it);
+			return;
+		}
+	}
+
+	setCursorColumn(m_consoleSize.x-1);
+}
+
+void wxTerminalCtrl::backwardTabStops()
+{
+	size_t col = m_currentScreen->getCaretAbsolutePosition().x;
+	for(std::set<unsigned int>::const_reverse_iterator it=m_tabstops.rbegin(); it!=m_tabstops.rend(); ++it)
+	{
+		if(*it<col)
+		{
+			setCursorColumn(*it);
+			return;
+		}
+	}
+
+	setCursorColumn(0);
+}
+
+void wxTerminalCtrl::setTabStop(int col)
+{
+	m_tabstops.insert(col);
+}
+
+void wxTerminalCtrl::setTabStop()
+{
+	m_tabstops.insert(m_currentScreen->getCaretAbsolutePosition().x);
+}
+
+void wxTerminalCtrl::clearTabStop(int col)
+{
+	m_tabstops.erase(col);
+}
+
+void wxTerminalCtrl::clearTabStop()
+{
+	m_tabstops.erase(m_currentScreen->getCaretAbsolutePosition().x);
+}
+
+void wxTerminalCtrl::clearAllTabStops()
+{
+	m_tabstops.clear();
+}
+
+void wxTerminalCtrl::setDefaultTabStops(int col)
+{
+	for(size_t c = 0; c < m_consoleSize.x; c += m_tabWidth)
+	{
+		if(c >= col)
+			m_tabstops.insert(c);
+	}
+}
+
 
 
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
@@ -1544,7 +1614,9 @@ void wxTerminalCtrl::onBS()   // 0x08 - BACK SPACE
 
 void wxTerminalCtrl::onHT()   // 0x09
 {
-	NOT_IMPLEMENTED("HT");
+	//  Move the cursor to the next tab stop, or to the right margin if no further tab stops are present on the line.
+	TRACE("HT");
+	forwardTabStops();
 }
 
 void wxTerminalCtrl::onLF()   // 0x0A - LINE FEED
@@ -1698,7 +1770,8 @@ void wxTerminalCtrl::onESA()  // 0x87
 
 void wxTerminalCtrl::onHTS()  // 0x88
 {
-	NOT_IMPLEMENTED("HTS");
+	TRACE("HTS");
+	setTabStop();
 }
 
 void wxTerminalCtrl::onHTJ()  // 0x89
@@ -1841,7 +1914,11 @@ void wxTerminalCtrl::onCUP(unsigned short row, unsigned short col) // Moves the 
 
 void wxTerminalCtrl::onCHT(unsigned short nb) // Cursor Forward Tabulation P s tab stops (default = 1)
 {
-	NOT_IMPLEMENTED("CHT " << nb);
+	TRACE("CHT nb=" << nb);
+	while(nb-- > 0)
+	{
+		forwardTabStops();
+	}
 }
 
 
@@ -1938,7 +2015,11 @@ void wxTerminalCtrl::onECH(unsigned short nb)  // Erase Ps Character(s) (default
 
 void wxTerminalCtrl::onCBT(unsigned short nb)  // Cursor Backward Tabulation Ps tab stops (default = 1)
 {
-	NOT_IMPLEMENTED("CBT " << nb);
+	TRACE("CBT nb=" << nb);
+	while(nb-- > 0)
+	{
+		backwardTabStops();
+	}
 }
 
 void wxTerminalCtrl::onHPA(const std::vector<unsigned short> nbs)  // Character Position Absolute [column] (default = [row,1]) (HPA).
@@ -1984,7 +2065,11 @@ void wxTerminalCtrl::onHVP(unsigned short row, unsigned short col) // Horizontal
 
 void wxTerminalCtrl::onTBC(unsigned short nb)  // Tab Clear
 {
-	NOT_IMPLEMENTED("TBC " << nb);
+	TRACE("TBC " << nb);
+	if(nb==0)
+		clearTabStop();
+	else if(nb==3)
+		clearAllTabStops();
 }
 
 void wxTerminalCtrl::onSM(const std::vector<unsigned short> nbs)  // Set Mode

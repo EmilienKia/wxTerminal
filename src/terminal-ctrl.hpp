@@ -378,6 +378,25 @@ public:
 	void insertLines(unsigned int count = 1);
 	/** Delete lines at cursor position.*/
 	void deleteLines(unsigned int count = 1);
+
+
+	/** Move the cursor forward to the next tab stop, or to the last column if no more tab stops are set. */
+	void forwardTabStops();
+	/** Move the cursor backward to the previous tab stop, or to the first column if no previous tab stops are set. */
+	void backwardTabStops();
+	/** Set a tab stop at the given column. */
+	void setTabStop(int col);
+	/** Set a tab stop at the cursor position. */
+	void setTabStop();
+	/** Clear the tab stop at the given column. */
+	void clearTabStop(int col);
+	/** Clear the tab stop at the cursor position. */
+	void clearTabStop();
+	/** Clear all tab stops. */
+	void clearAllTabStops();
+	/** Set up the default tab stops, starting from a given column. */
+	void setDefaultTabStops(int col = 0);
+	
 	
 	/** Test if shown screen is primary. */
 	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}
@@ -606,6 +625,9 @@ private:
 	unsigned short m_GL, m_GR; // Respectively 7-bit and 8-bit visible character set (values in 0...3).
 
 	unsigned int m_options; // Flags from wxTerminalOptionFlags
+
+	unsigned int m_tabWidth; // Size of tab in chars
+	std::set<unsigned int> m_tabstops; // Set of tabstops
 	
 	wxTimer* m_timer;    // Timer for i/o treatments.
 	wxOutputStream* m_outputStream;
