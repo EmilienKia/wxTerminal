@@ -32,6 +32,36 @@ using namespace std;
 
 //
 //
+// Debug features:
+//
+//
+#if 1 // Debuging feature activated
+
+#define DBGOUT (std::cout)
+#define NOT_IMPLEMENTED(content) {DBGOUT << "Not implemented: " << content << std::endl;}
+
+#else  // Debuging feature activated
+
+#define NOT_IMPLEMENTED(content);
+
+#endif // Debuging feature activated
+
+
+
+#if 0 // Tracing  feature activated
+
+#define TRACEOUT (std::cout)
+#define TRACE(content) {TRACEOUT << content << std::endl;}
+
+#else // Tracing  feature activated
+
+#define TRACE(content);
+
+#endif  // Tracing  feature activated
+
+
+//
+//
 // wxTerminalCharacter
 //
 //
@@ -1303,69 +1333,70 @@ void wxTerminalCtrl::onPrintableChar(unsigned char c)
 
 void wxTerminalCtrl::onS7C1T() // 7-bit controls
 {
-	std::cout << "onS7C1T" << std::endl;
+	TRACE("S7C1T");
 	// Note: no trapping 7 and 8 bits modes as they are always recognized for now
 }
 
 void wxTerminalCtrl::onS8C1T() // 8-bit controls
 {
-	std::cout << "onS8C1T" << std::endl;
+	TRACE("S8C1T");
 	// Note: no trapping 7 and 8 bits modes as they are always recognized for now
 }
 
 void wxTerminalCtrl::onANSIconf1() // Set ANSI conformance level 1  (vt100, 7-bit controls).
 {
-	std::cout << "onANSIconf1" << std::endl;
+	NOT_IMPLEMENTED("ANSIconf1");
 }
 
 void wxTerminalCtrl::onANSIconf2() // Set ANSI conformance level 2  (vt200).
 {
-	std::cout << "onANSIconf2" << std::endl;
+	NOT_IMPLEMENTED("ANSIconf2");
 }
 
 void wxTerminalCtrl::onANSIconf3() // Set ANSI conformance level 3  (vt300).
 {
-	std::cout << "onANSIconf3" << std::endl;
+	NOT_IMPLEMENTED("ANSIconf3");
 }
 
 void wxTerminalCtrl::onDECDHLth() // DEC double-height line, top half
 {
-	std::cout << "onDECDHLth" << std::endl;
+	NOT_IMPLEMENTED("DECDHLth");
 }
 
 void wxTerminalCtrl::onDECDHLbh() // DEC double-height line, bottom half
 {
-	std::cout << "onDECDHLbh" << std::endl;
+	NOT_IMPLEMENTED("DECDHLbh");
 }
 
 void wxTerminalCtrl::onDECSWL() // DEC single-width line
 {
-	std::cout << "onDECSWL" << std::endl;
+	NOT_IMPLEMENTED("DECSWL");
 }
 
 void wxTerminalCtrl::onDECDWL() // DEC double-width line
 {
-	std::cout << "onDECDWL" << std::endl;
+	NOT_IMPLEMENTED("DECDWL");
 }
 
 void wxTerminalCtrl::onDECALN() // DEC Screen Alignment Test
 {
-	std::cout << "onDECALN" << std::endl;
+	NOT_IMPLEMENTED("DECALN");
 }
 
 void wxTerminalCtrl::onISO8859_1() // Select default character set. That is ISO 8859-1 (ISO 2022).
 {
-	std::cout << "onISO8859_1" << std::endl;
+	NOT_IMPLEMENTED("ISO8859_1");
 }
 
 void wxTerminalCtrl::onUTF_8() // Select UTF-8 character set (ISO 2022).
 {
-	std::cout << "onUTF_8" << std::endl;
+	NOT_IMPLEMENTED("UTF_8");
 }
 
 // Character Set Selection (SCS). Designate G(id) (G0...G3) Character Set (ISO 2022)
 void wxTerminalCtrl::onSCS(unsigned char id, unsigned char charset)
 {
+	TRACE("SCS id=" << id << " charset=" << charset);
 	if(id<4)
 		m_Gx[id] = wxTerminalCharacterMap::getMap(charset);
 	if(m_Gx[id]==NULL)
@@ -1374,61 +1405,66 @@ void wxTerminalCtrl::onSCS(unsigned char id, unsigned char charset)
 
 void wxTerminalCtrl::onDECBI() // Back Index, VT420 and up.
 {
-	std::cout << "onDECBI" << std::endl;
+	NOT_IMPLEMENTED("DECBI");
 }
 
 void wxTerminalCtrl::onDECSC() // Save cursor
 {
-	std::cout << "onDECSC" << std::endl;
+	NOT_IMPLEMENTED("DECSC");
 }
 
 void wxTerminalCtrl::onDECRC() // Restore cursor
 {
-	std::cout << "onDECRC" << std::endl;
+	NOT_IMPLEMENTED("DECRC");
 }
 
 void wxTerminalCtrl::onDECFI() // Forward Index, VT420 and up.
 {
-	std::cout << "onDECFI" << std::endl;
+	NOT_IMPLEMENTED("DECFI");
 }
 
 void wxTerminalCtrl::onDECKPAM() // Application Keypad
 {
-	std::cout << "onDECKPAM" << std::endl;
+	NOT_IMPLEMENTED("DECKPAM");
 }
 
 void wxTerminalCtrl::onDECKPNM() // Normal Keypad
 {
-	std::cout << "onDECKPNM" << std::endl;
+	NOT_IMPLEMENTED("DECKPNM");
 }
 
 void wxTerminalCtrl::onRIS() // Full Reset
 {
-	std::cout << "onRIS" << std::endl;
+	NOT_IMPLEMENTED("RIS");
 }
 
 void wxTerminalCtrl::onLS2() // Invoke the G2 Character Set as GL.
 {
+	TRACE("LS2");
 	m_GL = 2;
 }
 
 void wxTerminalCtrl::onLS3() // Invoke the G3 Character Set as GL.
 {
+	TRACE("LS3");
 	m_GL = 3;
 }
 
 void wxTerminalCtrl::onLS1R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
+	TRACE("LS1R");
 	m_GR = 1;
 }
 
 void wxTerminalCtrl::onLS2R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
+	TRACE("LS2R");
 	m_GR = 2;
 }
 
 void wxTerminalCtrl::onLS3R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
+	TRACE("LS3R");
 	m_GR = 3;
 }
 
@@ -1437,82 +1473,85 @@ void wxTerminalCtrl::onLS3R() // Invoke the G1 Character Set as GR (). Has no vi
 //-----	
 void wxTerminalCtrl::onNUL()  // 0x00
 {
-	std::cout << "onNUL" << std::endl;
+	NOT_IMPLEMENTED("NULL");
 }
 
 void wxTerminalCtrl::onSOH()  // 0x01
 {
-	std::cout << "onSOH" << std::endl;
+	NOT_IMPLEMENTED("SOH");
 }
 
 void wxTerminalCtrl::onSTX()  // 0x02
 {
-	std::cout << "onSTX" << std::endl;
+	NOT_IMPLEMENTED("STX");
 }
 
 void wxTerminalCtrl::onETX()  // 0x03
 {
-	std::cout << "onETX" << std::endl;
+	NOT_IMPLEMENTED("ETX");
 }
 
 void wxTerminalCtrl::onEOT()  // 0x04
 {
-	std::cout << "onEOT" << std::endl;
+	NOT_IMPLEMENTED("EOT");
 }
 
 void wxTerminalCtrl::onENQ()  // 0x05
 {
-	std::cout << "onSonENQ" << std::endl;
+	NOT_IMPLEMENTED("ENQ");
 }
 
 void wxTerminalCtrl::onACK()  // 0x06
 {
-	std::cout << "onACK" << std::endl;
+	NOT_IMPLEMENTED("ACK");
 }
 
 void wxTerminalCtrl::onBEL()  // 0x07
 {
+	TRACE("BEL");
 	wxBell();
-	std::cout << "onBEL" << std::endl;
 }
 
 void wxTerminalCtrl::onBS()   // 0x08 - BACK SPACE
 {
+	TRACE("BS");
 	// TODO Remove current char
 	cursorLeft();
 }
 
 void wxTerminalCtrl::onHT()   // 0x09
 {
-	std::cout << "onHT" << std::endl;
+	NOT_IMPLEMENTED("HT");
 }
 
 void wxTerminalCtrl::onLF()   // 0x0A - LINE FEED
 {
+	TRACE("LF");
 	SetChar(0x0A);
 	formFeed(); // Do form feed (instead of line feed) processing accordingly with autoCarriageReturn
 }
 
 void wxTerminalCtrl::onVT()   // 0x0B - VERTICAL TAB
 {
-	// std::cout << "onVT" << std::endl;
+	TRACE("VT");
 	formFeed(); // Processed as LINE FEED
 }
 
 void wxTerminalCtrl::onFF()   // 0x0C
 {
-	// std::cout << "onFF" << std::endl;
+	TRACE("FF");
 	formFeed();
 }
 
 void wxTerminalCtrl::onCR()   // 0x0D - CARRIAGE RETURN -- Done
 {
-	// SetChar(0x0D);
+	TRACE("CR");
 	carriageReturn();
 }
 
 void wxTerminalCtrl::onSO()   // 0x0E
 {
+	TRACE("SO");
 	// Shift Out (SO), aka Lock Shift 0 (LS1).
 	// Invoke G1 character set in GL.
 	m_GL = 1;
@@ -1520,6 +1559,7 @@ void wxTerminalCtrl::onSO()   // 0x0E
 
 void wxTerminalCtrl::onSI()   // 0x0F
 {
+	TRACE("SI");
     // Shift In (SI), aka Lock Shift 0 (LS0).
     // Invoke G0 character set in GL.
 	m_GL = 0;
@@ -1527,67 +1567,67 @@ void wxTerminalCtrl::onSI()   // 0x0F
 
 void wxTerminalCtrl::onDLE()  // 0x10
 {
-	std::cout << "onDLE" << std::endl;
+	NOT_IMPLEMENTED("DLE");
 }
 
 void wxTerminalCtrl::onDC1()  // 0x11
 {
-	std::cout << "onDC1" << std::endl;
+	NOT_IMPLEMENTED("DC1");
 }
 
 void wxTerminalCtrl::onDC2()  // 0x12
 {
-	std::cout << "onDC2" << std::endl;
+	NOT_IMPLEMENTED("DC2");
 }
 
 void wxTerminalCtrl::onDC3()  // 0x13
 {
-	std::cout << "onDC3" << std::endl;
+	NOT_IMPLEMENTED("DC3");
 }
 
 void wxTerminalCtrl::onDC4()  // 0x14
 {
-	std::cout << "onDC4" << std::endl;
+	NOT_IMPLEMENTED("DC4");
 }
 
 void wxTerminalCtrl::onNAK()  // 0x15
 {
-	std::cout << "onNAK" << std::endl;
+	NOT_IMPLEMENTED("NAK");
 }
 
 void wxTerminalCtrl::onSYN()  // 0x16
 {
-	std::cout << "onSYN" << std::endl;
+	NOT_IMPLEMENTED("SYN");
 }
 
 void wxTerminalCtrl::onETB()  // 0x17
 {
-	std::cout << "onETB" << std::endl;
+	NOT_IMPLEMENTED("ETB");
 }
 
 void wxTerminalCtrl::onEM()   // 0x19
 {
-	std::cout << "onEM" << std::endl;
+	NOT_IMPLEMENTED("EM");
 }
 
 void wxTerminalCtrl::onFS()   // 0x1C
 {
-	std::cout << "onFS" << std::endl;
+	NOT_IMPLEMENTED("FS");
 }
 
 void wxTerminalCtrl::onGS()   // 0x1D
 {
-	std::cout << "onGS" << std::endl;
+	NOT_IMPLEMENTED("GS");
 }
 
 void wxTerminalCtrl::onRS()   // 0x1E
 {
-	std::cout << "nRS" << std::endl;
+	NOT_IMPLEMENTED("RS");
 }
 
 void wxTerminalCtrl::onUS()   // 0x1F
 {
-	std::cout << "onUS" << std::endl;
+	NOT_IMPLEMENTED("US");
 }
 
 
@@ -1595,127 +1635,127 @@ void wxTerminalCtrl::onUS()   // 0x1F
 //-----	
 void wxTerminalCtrl::onPAD()  // 0x80
 {
-	std::cout << "onPAD" << std::endl;
+	NOT_IMPLEMENTED("PAD");
 }
 
 void wxTerminalCtrl::onHOP()  // 0x81
 {
-	std::cout << "onHOP" << std::endl;
+	NOT_IMPLEMENTED("HOP");
 }
 
 void wxTerminalCtrl::onBPH()  // 0x82
 {
-	std::cout << "onBPH" << std::endl;
+	NOT_IMPLEMENTED("BPH");
 }
 
 void wxTerminalCtrl::onNBH()  // 0x83
 {
-	std::cout << "onNBH" << std::endl;
+	NOT_IMPLEMENTED("NBH");
 }
 
 void wxTerminalCtrl::onIND()  // 0x84
 {
-	std::cout << "onIND" << std::endl;
+	NOT_IMPLEMENTED("IND");
 }
 
 void wxTerminalCtrl::onNEL()  // 0x85
 {
-	std::cout << "onNEL" << std::endl;
+	NOT_IMPLEMENTED("NEL");
 }
 
 void wxTerminalCtrl::onSSA()  // 0x86
 {
-	std::cout << "onSSA" << std::endl;
+	NOT_IMPLEMENTED("SSA");
 }
 
 void wxTerminalCtrl::onESA()  // 0x87
 {
-	std::cout << "onESA" << std::endl;
+	NOT_IMPLEMENTED("ESA");
 }
 
 void wxTerminalCtrl::onHTS()  // 0x88
 {
-	std::cout << "onHTS" << std::endl;
+	NOT_IMPLEMENTED("HTS");
 }
 
 void wxTerminalCtrl::onHTJ()  // 0x89
 {
-	std::cout << "onHTJ" << std::endl;
+	NOT_IMPLEMENTED("HTJ");
 }
 
 void wxTerminalCtrl::onVTS()  // 0x8A
 {
-	std::cout << "onVTS" << std::endl;
+	NOT_IMPLEMENTED("VTS");
 }
 
 void wxTerminalCtrl::onPLD()  // 0x8B
 {
-	std::cout << "onPLD" << std::endl;
+	NOT_IMPLEMENTED("PLD");
 }
 
 void wxTerminalCtrl::onPLU()  // 0x8C
 {
-	std::cout << "onPLU" << std::endl;
+	NOT_IMPLEMENTED("PLU");
 }
 
 void wxTerminalCtrl::onRI()   // 0x8D
 {
-	std::cout << "onRI" << std::endl;
+	NOT_IMPLEMENTED("RI");
 }
 
 void wxTerminalCtrl::onSS2()  // 0x8E
 {
-	std::cout << "onSS2" << std::endl;
+	NOT_IMPLEMENTED("SS2");
 }
 
 void wxTerminalCtrl::onSS3()  // 0x8F
 {
-	std::cout << "onSS3" << std::endl;
+	NOT_IMPLEMENTED("SS3");
 }
 
 void wxTerminalCtrl::onPU1()  // 0x91
 {
-	std::cout << "onPU1" << std::endl;
+	NOT_IMPLEMENTED("PU1");
 }
 
 void wxTerminalCtrl::onPU2()  // 0x92
 {
-	std::cout << "onPU2" << std::endl;
+	NOT_IMPLEMENTED("PU2");
 }
 
 void wxTerminalCtrl::onSTS()  // 0x93
 {
-	std::cout << "onSTS" << std::endl;
+	NOT_IMPLEMENTED("STS");
 }
 
 void wxTerminalCtrl::onCCH()  // 0x94
 {
-	std::cout << "onCCH" << std::endl;
+	NOT_IMPLEMENTED("CCH");
 }
 
 void wxTerminalCtrl::onMW()   // 0x95
 {
-	std::cout << "onMW" << std::endl;
+	NOT_IMPLEMENTED("MW");
 }
 
 void wxTerminalCtrl::onSPA()  // 0x96
 {
-	std::cout << "onSPA" << std::endl;
+	NOT_IMPLEMENTED("SPA");
 }
 
 void wxTerminalCtrl::onEPA()  // 0x97
 {
-	std::cout << "onEPA" << std::endl;
+	NOT_IMPLEMENTED("EPA");
 }
 
 void wxTerminalCtrl::onSGCI() // 0x99
 {
-	std::cout << "onSGCI" << std::endl;
+	NOT_IMPLEMENTED("SGCI");
 }
 
 void wxTerminalCtrl::onSCI()  // 0x9A
 {
-	std::cout << "onSCI" << std::endl;
+	NOT_IMPLEMENTED("SCI");
 }
 
 
@@ -1723,67 +1763,68 @@ void wxTerminalCtrl::onSCI()  // 0x9A
 //-----	
 void wxTerminalCtrl::onICH(unsigned short nb) // Insert P s (Blank) Character(s) (default = 1)
 {
-	std::cout << "onICH " << nb << std::endl;
+	NOT_IMPLEMENTED("ICH " << nb);
 }
 
 void wxTerminalCtrl::onCUU(unsigned short nb) // Cursor Up P s Times (default = 1)
 {
-	// std::cout << "onCUU " << nb << std::endl;
+	TRACE("CUU " << nb);
 	cursorUp(nb);
 }
 
 void wxTerminalCtrl::onCUD(unsigned short nb) // Cursor Down P s Times (default = 1)
 {
-	// std::cout << "onCUD " << nb << std::endl;
+	TRACE("CUD " << nb);
 	cursorDown(nb);
 }
 
 void wxTerminalCtrl::onCUF(unsigned short nb) // Cursor Forward P s Times (default = 1)
 {
-	//std::cout << "onCUF " << nb << std::endl;
+	TRACE("CUF " << nb);
 	cursorRight(nb);
 }
 
 void wxTerminalCtrl::onCUB(unsigned short nb) // Cursor Backward P s Times (default = 1)
 {
-	//std::cout << "onCUB " << nb << std::endl;
+	TRACE("CUB " << nb);
 	cursorLeft(nb);
 }
 
 void wxTerminalCtrl::onCNL(unsigned short nb) // Cursor Next Line P s Times (default = 1)
 {
-	// std::cout << "onCNL " << nb << std::endl;
+	TRACE("CNL " << nb);
 	cursorDown(nb);
 	setCursorColumn(0);
 }
 
 void wxTerminalCtrl::onCPL(unsigned short nb) // Cursor Preceding Line P s Times (default = 1)
 {
-	// std::cout << "onCPL " << nb << std::endl;
+	TRACE("CPL " << nb);
 	cursorUp(nb);
 	setCursorColumn(0);
 }
 
 void wxTerminalCtrl::onCHA(unsigned short nb) // Moves the cursor to column n.
 {
-	// std::cout << "onCHA " << nb << std::endl;
+	TRACE("CHA " << nb);
 	setCursorColumn(nb);
 }
 
 void wxTerminalCtrl::onCUP(unsigned short row, unsigned short col) // Moves the cursor to row n, column m
 {
-	// std::cout << "onCUP " << row << " - " << col << std::endl;
+	TRACE("CUP row=" << row << " col=" << col);
 	setCursorPosition(row-1, col-1);
 }
 
 void wxTerminalCtrl::onCHT(unsigned short nb) // Cursor Forward Tabulation P s tab stops (default = 1)
 {
-	std::cout << "onCHT " << nb << std::endl;
+	NOT_IMPLEMENTED("CHT " << nb);
 }
 
 
 void wxTerminalCtrl::onED(unsigned short opt) // Clears part of the screen.
 {
+	TRACE("ED " << opt); 
 	switch(opt)
 	{
 		case 0: // Erase Below
@@ -1810,11 +1851,12 @@ void wxTerminalCtrl::onED(unsigned short opt) // Clears part of the screen.
 
 void wxTerminalCtrl::onDECSED(unsigned short opt)  // Erase in Display. 0 → Selective Erase Below (default). 1 → Selective Erase Above. 2 → Selective Erase All. 3 → Selective Erase Saved Lines (xterm).
 {
-	std::cout << "onDECSED " << opt << std::endl;
+	NOT_IMPLEMENTED("DECSED " << opt);
 }
 
 void wxTerminalCtrl::onEL(unsigned short opt) // Erases part of the line. -- Mostly done
 {
+	TRACE("EL " << opt);
 	switch(opt)
 	{
 		case 0: // Erase Right
@@ -1836,141 +1878,153 @@ void wxTerminalCtrl::onEL(unsigned short opt) // Erases part of the line. -- Mos
 
 void wxTerminalCtrl::onDECSEL(unsigned short nb)  // Erase in Line. 0 → Selective Erase to Right (default). 1 → Selective Erase to Left. 2 → Selective Erase All.
 {
-	std::cout << "onDECSEL " << nb << std::endl;
+	NOT_IMPLEMENTED("DECSEL " << nb);
 }
 
 void wxTerminalCtrl::onIL(unsigned short nb)  // Insert Ps Line(s) (default = 1)
 {
-	// std::cout << "onIL " << nb << std::endl;
+	TRACE("IL " << nb);
 	insertLines(nb);
 }
 
 void wxTerminalCtrl::onDL(unsigned short nb)  // Delete Ps Line(s) (default = 1)
 {
-	std::cout << "onDL " << nb << std::endl;
+	NOT_IMPLEMENTED("DL " << nb);
 }
 
 void wxTerminalCtrl::onDCH(unsigned short nb) // Delete Ps Character(s) (default = 1)
 {
-	std::cout << "onDCH " << nb << std::endl;
+	NOT_IMPLEMENTED("DCH " << nb);
 }
 
 void wxTerminalCtrl::onSU(unsigned short nb)  // Scroll up Ps lines (default = 1)
 {
-	std::cout << "onSU " << nb << std::endl;
+	NOT_IMPLEMENTED("SU " << nb);
 }
 
 void wxTerminalCtrl::onSD(unsigned short nb)  // Scroll down Ps lines (default = 1)
 {
-	std::cout << "onSD " << nb << std::endl;
+	NOT_IMPLEMENTED("SD " << nb);
 }
 
 void wxTerminalCtrl::onECH(unsigned short nb)  // Erase Ps Character(s) (default = 1)
 {
-	std::cout << "onECH " << nb << std::endl;
+	NOT_IMPLEMENTED("ECH " << nb);
 }
 
 void wxTerminalCtrl::onCBT(unsigned short nb)  // Cursor Backward Tabulation Ps tab stops (default = 1)
 {
-	std::cout << "onCBT " << nb << std::endl;
+	NOT_IMPLEMENTED("CBT " << nb);
 }
 
 void wxTerminalCtrl::onHPA(const std::vector<unsigned short> nbs)  // Character Position Absolute [column] (default = [row,1]) (HPA).
 {
-	std::cout << "onHPA";
+	NOT_IMPLEMENTED("HPA");
+/*	std::cout << "onHPA";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onHPR(const std::vector<unsigned short> nbs)  // Character Position Relative [columns] (default = [row,col+1]) (HPR).
 {
-	std::cout << "onHPR";
+	NOT_IMPLEMENTED("HPR");
+/*	std::cout << "onHPR";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;}
+	std::cout << std::endl;*/
+}
 
 void wxTerminalCtrl::onVPA(const std::vector<unsigned short> nbs)  // Line Position Absolute [row] (default = [1,column])
 {
-	std::cout << "onVPA";
+	NOT_IMPLEMENTED("VPA");
+/*	std::cout << "onVPA";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onVPR(const std::vector<unsigned short> nbs)  // Line Position Relative [rows] (default = [row+1,column]) (VPR)
 {
-	std::cout << "onVPR";
+	NOT_IMPLEMENTED("VPR");
+/*	std::cout << "onVPR";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onHVP(unsigned short row, unsigned short col) // Horizontal and Vertical Position [row;column] (default = [1,1])
 {
-	std::cout << "onHVP " << row << " " << col << std::endl;
+	NOT_IMPLEMENTED("HVP row=" << row << " col=" << col);
 }
 
 void wxTerminalCtrl::onTBC(unsigned short nb)  // Tab Clear
 {
-	std::cout << "onTBC " << nb << std::endl;
+	NOT_IMPLEMENTED("TBC " << nb);
 }
 
 void wxTerminalCtrl::onSM(const std::vector<unsigned short> nbs)  // Set Mode
 {
-	std::cout << "onSM";
+	NOT_IMPLEMENTED("SM");
+/*	std::cout << "onSM";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDECSET(const std::vector<unsigned short> nbs)  // DEC Private Mode Set
 {
-	std::cout << "onDECSET";
+	NOT_IMPLEMENTED("DECSET");
+/*	std::cout << "onDECSET";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onMC(const std::vector<unsigned short> nbs)  // Media Copy
 {
-	std::cout << "onMC";
+	NOT_IMPLEMENTED("MC");
+/*	std::cout << "onMC";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDECMC(const std::vector<unsigned short> nbs)  // DEC specific Media Copy
 {
-	std::cout << "onDECMC";
+	NOT_IMPLEMENTED("DECMC");
+/*	std::cout << "onDECMC";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onRM(const std::vector<unsigned short> nbs)  // Reset Mode
 {
-	std::cout << "onRM";
+	NOT_IMPLEMENTED("RM");
+/*	std::cout << "onRM";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDECRST(const std::vector<unsigned short> nbs)  // DEC Private Mode Reset
 {
-	std::cout << "onDECRST";
+	NOT_IMPLEMENTED("DECRST");
+/*	std::cout << "onDECRST";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDSR(unsigned short nb)  // Device Status Report
 {
-	std::cout << "onDSR " << nb << std::endl;
+	NOT_IMPLEMENTED("DSR " << nb);
 }
 
 void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Graphic Renditions -- In progress
 {
+	TRACE("SGR");
 	for(size_t n=0; n<nbs.size(); ++n)
 	{
 		unsigned short sgr = nbs[n]; 
@@ -2044,175 +2098,181 @@ void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Grap
 
 void wxTerminalCtrl::onDECDSR(unsigned short nb)  // DEC-specific Device Status Report
 {
-	std::cout << "onDECDSR " << nb << std::endl;
+	NOT_IMPLEMENTED("DECDSR " << nb);
 }
 
 void wxTerminalCtrl::onDECSTR()  // Soft terminal reset
 {
-	std::cout << "onDECSTR" << std::endl;
+	NOT_IMPLEMENTED("DECSTR");
 }
 
 void wxTerminalCtrl::onDECSCL(unsigned short nb1, unsigned short nb2) // Set conformance level
 {
-	std::cout << "onDECSCL " << nb1 << " " << nb2 << std::endl;
+	NOT_IMPLEMENTED("DECSCL " << nb1 << " " << nb2);
 }
 
 void wxTerminalCtrl::onDECRQM(unsigned short nb)  // Request DEC private mode
 {
-	std::cout << "onDECRQM " << nb << std::endl;
+	NOT_IMPLEMENTED("DECRQM " << nb);
 }
 
 void wxTerminalCtrl::onDECLL(unsigned short nb)  // Load LEDs
 {
-	std::cout << "onDECLL " << nb << std::endl;
+	NOT_IMPLEMENTED("DECLL " << nb);
 }
 
 void wxTerminalCtrl::onDECSCUSR(unsigned short nb)  // Set cursor style (DECSCUSR, VT520).
 {
-	std::cout << "onDECSCUSR " << nb << std::endl;
+	NOT_IMPLEMENTED("DECSCUSR " << nb);
 }
 
 void wxTerminalCtrl::onDECSCA(unsigned short nb)  // Select character protection attribute (DECSCA).
 {
-	std::cout << "onDECSCA " << nb << std::endl;
+	NOT_IMPLEMENTED("DECSCA " << nb);
 }
 
 void wxTerminalCtrl::onDECSTBM(unsigned short top, unsigned short bottom) // Set Scrolling Region [top;bottom] (default = full size of window)
 {
-	std::cout << "onDECSTBM top=" << top << " bottom=" << bottom << std::endl;
+	NOT_IMPLEMENTED("DECSTBM top=" << top << " bottom=" << bottom);
 }
 
 void wxTerminalCtrl::onRDECPMV(const std::vector<unsigned short> nbs)  // Restore DEC Private Mode Values. The value of P s previously saved is restored. P s values are the same as for DECSET.
 {
-	std::cout << "onRDECPMV";
+	NOT_IMPLEMENTED("RDECPMV");
+/*	std::cout << "onRDECPMV";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onSDECPMV(const std::vector<unsigned short> nbs)  // Save DEC Private Mode Values. P s values are the same as for DECSET.
 {
-	std::cout << "onSDECPMV";
+	NOT_IMPLEMENTED("SDECPMV");
+/*	std::cout << "onSDECPMV";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDECCARA(const std::vector<unsigned short> nbs)  // Change Attributes in Rectangular Area (DECCARA), VT400 and up.
 {
-	std::cout << "onDECCARA";
+	NOT_IMPLEMENTED("DECCARA");
+/*	std::cout << "onDECCARA";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDECSLRM(unsigned short left, unsigned short right) // Set left and right margins (DECSLRM), available only when DECLRMM is enabled (VT420 and up).
 {
-	std::cout << "onDECSLRM left=" << left << " right=" << right << std::endl;
+	NOT_IMPLEMENTED("DECSLRM left=" << left << " right=" << right);
 }
 
 void wxTerminalCtrl::onANSISC()  // Save cursor (ANSI.SYS), available only when DECLRMM is disabled.
 {
-	std::cout << "onANSISC" << std::endl;
+	NOT_IMPLEMENTED("ANSISC");
 }
 
 void wxTerminalCtrl::onANSIRC()  // Restore cursor (ANSI.SYS).
 {
-	std::cout << "onANSIRC" << std::endl;
+	NOT_IMPLEMENTED("ANSIRC");
 }
 
 void wxTerminalCtrl::onWindowManip(unsigned short nb1, unsigned short nb2, unsigned short nb3) // Set conformance level
 {
-	std::cout << "onWindowManip " << nb1 << " " << nb2 << " " << nb3 << std::endl;
+	NOT_IMPLEMENTED("WindowManip " << nb1 << " " << nb2 << " " << nb3);
 }
 
 void wxTerminalCtrl::onDECRARA(const std::vector<unsigned short> nbs)  // Reverse Attributes in Rectangular Area (DECRARA), VT400 and up.
 {
-	std::cout << "onDECRARA";
+	NOT_IMPLEMENTED("DECRARA");
+/*	std::cout << "onDECRARA";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDECSWBV(unsigned short nb)  // Set warning-bell volume (DECSWBV, VT520).
 {
-	std::cout << "onDECSWBV " << nb << std::endl;
+	NOT_IMPLEMENTED("DECSWBV " << nb);
 }
 
 void wxTerminalCtrl::onDECSMBV(unsigned short nb)  // Set margin-bell volume (DECSMBV, VT520).
 {
-	std::cout << "onDECSMBV " << nb << std::endl;
+	NOT_IMPLEMENTED("DECSMBV " << nb);
 }
 
 void wxTerminalCtrl::onDECCRA(const std::vector<unsigned short> nbs)  // Copy Rectangular Area (DECCRA, VT400 and up).
 {
-	std::cout << "onDECCRA";
+	NOT_IMPLEMENTED("DECCRA");
+/*	std::cout << "onDECCRA";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDECEFR(unsigned short top, unsigned short left, unsigned short bottom, unsigned short right) // Enable Filter Rectangle (DECEFR), VT420 and up.
 {
-	std::cout << "onDECEFR " << top << " " << left << " " << bottom << " " << right << std::endl;
+	NOT_IMPLEMENTED("DECEFR " << top << " " << left << " " << bottom << " " << right);
 }
 
 void wxTerminalCtrl::onDECREQTPARM(unsigned short nb)  // Request Terminal Parameters
 {
-	std::cout << "onDECREQTPARM " << nb << std::endl;
+	NOT_IMPLEMENTED("DECREQTPARM " << nb);
 }
 
 void wxTerminalCtrl::onDECSACE(unsigned short nb)  // Select Attribute Change Extent
 {
-	std::cout << "onDECSACE " << nb << std::endl;
+	NOT_IMPLEMENTED("DECSACE " << nb);
 }
 
 void wxTerminalCtrl::onDECFRA(unsigned short chr, unsigned short top, unsigned short left, unsigned short bottom, unsigned short right) // Fill Rectangular Area (DECFRA), VT420 and up.
 {
-	std::cout << "onDECFRA " << chr << " " << top << " " << left << " " << bottom << " " << right << std::endl;
+	NOT_IMPLEMENTED("DECFRA " << chr << " " << top << " " << left << " " << bottom << " " << right);
 }
 
 void wxTerminalCtrl::onDECRQCRA(unsigned short id, unsigned short page, unsigned short top, unsigned short left, unsigned short bottom, unsigned short right) // Request Checksum of Rectangular Area (DECRQCRA), VT420 and up.
 {
-	std::cout << "onDECRQCRA " << id << " " << page << " " << top << " " << left << " " << bottom << " " << right << std::endl;
+	NOT_IMPLEMENTED("DECRQCRA " << id << " " << page << " " << top << " " << left << " " << bottom << " " << right);
 }
 
 void wxTerminalCtrl::onDECELR(unsigned short nb1, unsigned short nb2) // Enable Locator Reporting (DECELR).
 {
-	std::cout << "onDECELR " << nb1 << " " << nb2 << std::endl;
+	NOT_IMPLEMENTED("DECELR " << nb1 << " " << nb2);
 }
 
 void wxTerminalCtrl::onDECERA(unsigned short top, unsigned short left, unsigned short bottom, unsigned short right) // Erase Rectangular Area (DECERA), VT400 and up.
 {
-	std::cout << "onDECERA " << top << " " << left << " " << bottom << " " << right  << std::endl;
+	NOT_IMPLEMENTED("DECERA " << top << " " << left << " " << bottom << " " << right);
 }
 
 void wxTerminalCtrl::onDECSLE(const std::vector<unsigned short> nbs)  // Select Locator Events (DECSLE).
 {
-	std::cout << "onDECSLE";
+	NOT_IMPLEMENTED("DECSLE");
+/*	std::cout << "onDECSLE";
 	for(size_t n=0; n<nbs.size(); ++n)
 		std::cout << " " << nbs[n];
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 void wxTerminalCtrl::onDECSERA(unsigned short top, unsigned short left, unsigned short bottom, unsigned short right) // Selective Erase Rectangular Area (), VT400 and up.
 {
-	std::cout << "onDECSERA " << top << " " << left << " " << bottom << " " << right << std::endl;
+	NOT_IMPLEMENTED("DECSERA " << top << " " << left << " " << bottom << " " << right);
 }
 
 void wxTerminalCtrl::onDECRQLP(unsigned short nb)  // Request Locator Position (DECRQLP).
 {
-	std::cout << "onDECRQLP " << nb << std::endl;
+	NOT_IMPLEMENTED("DECRQLP " << nb);
 }
 
 void wxTerminalCtrl::onDECIC(unsigned short nb)  // Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
 {
-	std::cout << "onDECIC " << nb << std::endl;
+	NOT_IMPLEMENTED("DECIC " << nb);
 }
 
 void wxTerminalCtrl::onDECDC(unsigned short nb)  // InsDelete P s Column(s) (default = 1) (DECIC), VT420 and up.
 {
-	std::cout << "onDECDC " << nb << std::endl;
+	NOT_IMPLEMENTED("onDECDC " << nb);
 }
 
 void wxTerminalCtrl::onOSC(unsigned short command, const std::vector<unsigned char>& params) // Receive an OSC (Operating System Command) command. -- In progress
@@ -2223,12 +2283,12 @@ void wxTerminalCtrl::onOSC(unsigned short command, const std::vector<unsigned ch
 		case 2: // Change Window Title to Pt.
 		{
 			wxString str((const char*)&params.front(), params.size());
-			printf("Change title: \"%s\"\n", (const char*)str.c_str());
+			std::cout << "Change window title : " << str << std::endl;
 			break;
 		}
 		default:
 			// TODO Add others
-			printf("Unknown OSC 0x%04X\n", (int)command);
+			NOT_IMPLEMENTED("OSC command=" << command);
 			break;
 	}
 }
