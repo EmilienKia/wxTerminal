@@ -139,25 +139,38 @@ public:
 	/** Retrieve the number of rows in screen (after origin in history).*/
 	size_t getScreenRowCount()const{return _content.size() >= _originPosition.y ? _content.size() - _originPosition.y : 0;}
 
-	/** Retrieve the caret (textual cursor) position. */
-	wxPoint getCaretPosition()const{return _caretPosition;}
-	/** Set the caret (textual cursor) position. */
+	/** Retrieve the caret (textual cursor) position in relative coordinates. */
+	wxPoint getCaretPosition()const{return _caretPosition - _originPosition;}
+	/** Set the caret (textual cursor) position (in relative coordinates). */
 	void setCaretPosition(wxPoint pos);
+	/** Set the caret (textual cursor) position (in absolute coordinates). */
+	void setCaretAbsolutePosition(wxPoint pos);
 	
 	/** Set a char at specified position, overriding existing if any. */
-	void setChar(wxPoint pos, wxTerminalCharacter c);
+	void setChar(wxPoint pos, wxTerminalCharacter ch);
 	/** Set a char at specified position, overriding existing if any. */
 	void setChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr);
+	/** Set a char at specified absolute position, overriding existing if any. */
+	void setCharAbsolute(wxPoint pos, wxTerminalCharacter ch);
+	/** Set a char at specified absolute position, overriding existing if any. */
+	void setCharAbsolute(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr);
+
 	/** Insert a char just before the specified position. */
-	void insertChar(wxPoint pos, wxTerminalCharacter c);
+	void insertChar(wxPoint pos, wxTerminalCharacter ch);
 	/** Insert a char just before the specified position. */
 	void insertChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr);
+	/** Insert a char just before the specified absolute position. */
+	void insertCharAbsolute(wxPoint pos, wxTerminalCharacter ch);
+	/** Insert a char just before the specified absolute position. */
+	void insertCharAbsolute(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr);
 
-	/** Insert a char a caret position and move caret by one.*/
+	/** Insert a char at caret position and move caret by one.*/
 	void insertChar(wxUniChar c, const wxTerminalCharacterAttributes& attr);
-	/** Overwrite a char a caret position and move caret by one.*/
+	/** Overwrite a char at caret position and move caret by one.*/
 	void overwriteChar(wxUniChar c, const wxTerminalCharacterAttributes& attr);
-	
+
+	/** Retrieve origin coordinates.*/
+	wxPoint getOrigin()const{return _originPosition;}
 	/** Move origin in history. */
 	void moveOrigin(int lines);
 	/** Set origin in history. */
@@ -181,7 +194,7 @@ protected:
 	/** Position of origin (firstshown char of screen, top-left), in historic position. */  
 	wxPoint _originPosition;
 
-	/** Caret position, relative to origin. */
+	/** Caret position, absolute coordinates (in buffer). */
 	wxPoint _caretPosition;
 
 	/** Screen shwon size (in chars). */
@@ -312,7 +325,8 @@ public:
 	void lineFeed();
 	/** Process form feed (0x0C): if autoCarriageReturn : new line, else line feed. */
 	void formFeed();
-	
+	/** Process carriage return (0x0d). */
+	void carriageReturn();
 	
 	
 	/** Test if shown screen is primary. */

@@ -91,9 +91,9 @@ _size(80, 25)
 {
 }
 
-void wxTerminalScreen::setChar(wxPoint pos, wxTerminalCharacter c)
+void wxTerminalScreen::setChar(wxPoint pos, wxTerminalCharacter ch)
 {
-	_content.setChar(pos + _originPosition, c);
+	_content.setChar(pos + _originPosition, ch);
 }
 
 void wxTerminalScreen::setChar(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr)
@@ -101,12 +101,26 @@ void wxTerminalScreen::setChar(wxPoint pos, wxUniChar c, const wxTerminalCharact
 	wxTerminalCharacter ch;
 	ch.c     = c;
 	ch.attr  = attr;
-	setChar(pos, ch);
+	_content.setChar(pos + _originPosition, ch);
 }
 
-void wxTerminalScreen::insertChar(wxPoint pos, wxTerminalCharacter c)
+void wxTerminalScreen::setCharAbsolute(wxPoint pos, wxTerminalCharacter ch)
 {
-	_content.insertChar(pos + _originPosition, c);
+	_content.setChar(pos, ch);
+}
+
+void wxTerminalScreen::setCharAbsolute(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr)
+{
+	wxTerminalCharacter ch;
+	ch.c     = c;
+	ch.attr  = attr;
+	_content.setChar(pos, ch);
+}
+
+
+void wxTerminalScreen::insertChar(wxPoint pos, wxTerminalCharacter ch)
+{
+	_content.insertChar(pos + _originPosition, ch);
 	// TODO Validate content here ? (split long lines ?)
 }
 
@@ -115,10 +129,31 @@ void wxTerminalScreen::insertChar(wxPoint pos, wxUniChar c, const wxTerminalChar
 	wxTerminalCharacter ch;
 	ch.c     = c;
 	ch.attr  = attr;
-	insertChar(pos, ch);
+	// TODO Validate content here ? (split long lines ?)
+	_content.insertChar(pos + _originPosition, ch);
+}
+
+void wxTerminalScreen::insertCharAbsolute(wxPoint pos, wxTerminalCharacter ch)
+{
+	_content.insertChar(pos, ch);
+	// TODO Validate content here ? (split long lines ?)
+}
+
+void wxTerminalScreen::insertCharAbsolute(wxPoint pos, wxUniChar c, const wxTerminalCharacterAttributes& attr)
+{
+	wxTerminalCharacter ch;
+	ch.c     = c;
+	ch.attr  = attr;
+	// TODO Validate content here ? (split long lines ?)
+	_content.insertChar(pos, ch);
 }
 
 void wxTerminalScreen::setCaretPosition(wxPoint pos)
+{
+	_caretPosition = pos + _originPosition;
+}
+
+void wxTerminalScreen::setCaretAbsolutePosition(wxPoint pos)
 {
 	_caretPosition = pos;
 }
@@ -139,13 +174,20 @@ void wxTerminalScreen::setOrigin(int lines)
 
 void wxTerminalScreen::insertChar(wxUniChar c, const wxTerminalCharacterAttributes& attr)
 {
-	setChar(_caretPosition, c, attr);
+	wxTerminalCharacter ch;
+	ch.c     = c;
+	ch.attr  = attr;
+	_content.insertChar(_caretPosition, ch);
+	// TODO Validate content here ? (split long lines ?)
 	moveCaret(0, 1);
 }
 
 void wxTerminalScreen::overwriteChar(wxUniChar c, const wxTerminalCharacterAttributes& attr)
 {
-	setChar(_caretPosition, c, attr);
+	wxTerminalCharacter ch;
+	ch.c     = c;
+	ch.attr  = attr;
+	_content.setChar(_caretPosition, ch);
 	moveCaret(0, 1);
 }
 
@@ -893,6 +935,11 @@ void wxTerminalCtrl::formFeed()
 		lineFeed();
 }
 
+void wxTerminalCtrl::carriageReturn()
+{
+	m_currentScreen->setCaretColumn(0);
+}
+
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 {
 	wxCaretSuspend caretSuspend(this);
@@ -906,15 +953,15 @@ void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 	dc.SetPen(wxNullPen);
 	dc.DrawRectangle(0, 0, clientSz.x, clientSz.y);
 
-	for(size_t n=0; n<clchSz.y && n<m_currentScreen->getScreenRowCount(); n++)
+	for(size_t row=0; row<clchSz.y && row<m_currentScreen->getScreenRowCount(); row++)
 	{
-		const wxTerminalLine& line = m_currentScreen->getLine(n);
-		for(size_t i=0; i<line.size(); i++)
+		const wxTerminalLine& line = m_currentScreen->getLine(row);
+		for(size_t col=0; col<line.size(); col++)
 		{
-			const wxTerminalCharacter &ch = line[i];
+			const wxTerminalCharacter &ch = line[col];
 
-			// Not shown so skip
-			if(ch.attr.style & wxTCS_Invisible)
+			// Invisible or not shown so skip
+			if(ch.c < 32 || ch.attr.style & wxTCS_Invisible)
 				continue;
 
 			// Choose font
@@ -948,8 +995,8 @@ void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 			}
 
 			// Draw
-			dc.DrawRectangle(i*charSz.x, n*charSz.y, charSz.x, charSz.y);
-			dc.DrawText(ch.c, i*charSz.x, n*charSz.y);
+			dc.DrawRectangle(col*charSz.x, row*charSz.y, charSz.x, charSz.y);
+			dc.DrawText(ch.c, col*charSz.x, row*charSz.y);
 		}
 	}
 }
@@ -1341,11 +1388,10 @@ void wxTerminalCtrl::onFF()   // 0x0C
 	formFeed();
 }
 
-void wxTerminalCtrl::onCR()   // 0x0D - CARIAGE RETURN -- Done
+void wxTerminalCtrl::onCR()   // 0x0D - CARRIAGE RETURN -- Done
 {
 	SetChar(0x0D);
-//	m_currentScreen->setCaretColumn(0);
-// TODO	SetCaretPosition(0, GetCaretPosition().y+1);
+	carriageReturn();
 }
 
 void wxTerminalCtrl::onSO()   // 0x0E
