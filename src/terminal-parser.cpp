@@ -21,7 +21,6 @@ wxTerminal is free software: you can redistribute it and/or modify it
 
 #include <iostream>
 
-
 //
 //
 // TerminalParser
@@ -470,14 +469,14 @@ void TerminalParser::Process(unsigned char c)
 		}
 		case WXTP_STATE_OSC_STRING:
 		{
-			if(c <= 0x1F) // except 18, 1A, 1b, but already processed
-			{
-				// ignore
-			}
-			else if(c == 0x9C || c == 0x07 ) // ST || BEL
+			if(c == 0x9C || c == 0x07 ) // ST || BEL
 			{
 				// goto WXTP_STATE_GROUND
 				Transition(WXTP_STATE_GROUND);
+			}
+			else if(c <= 0x1F) // except 18, 1A, 1b, but already processed
+			{
+				// ignore
 			}
 			else //if(c <= 0x7F)
 			{
@@ -515,7 +514,6 @@ void TerminalParser::Transition(WXTP_STATE state)
 		case WXTP_STATE_DCS_PASSTHROUGH:
 			DcsUnhook();
 			break;
-		case WXTP_STATE_OSC_ENTRY:
 		case WXTP_STATE_OSC_STRING:
 			if(m_params.size()>0)
 				onOSC(m_params[0], m_collected);
@@ -531,6 +529,7 @@ void TerminalParser::Transition(WXTP_STATE state)
 		case WXTP_STATE_DCS_PARAM:
 		case WXTP_STATE_DCS_INTERMEDIATE:
 		case WXTP_STATE_DCS_IGNORE:
+		case WXTP_STATE_OSC_ENTRY:
 		case WXTP_STATE_SOS_PM_APC_STRING:
 		default:
 			break; /* Nothing specified. */
