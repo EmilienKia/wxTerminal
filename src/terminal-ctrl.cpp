@@ -191,6 +191,21 @@ void wxTerminalScreen::overwriteChar(wxUniChar c, const wxTerminalCharacterAttri
 	moveCaret(0, 1);
 }
 
+void wxTerminalScreen::insertLines(int pos, unsigned int count)
+{
+	_content.insert(_content.begin()+pos+_originPosition.y, count, wxTerminalLine());
+}
+
+void wxTerminalScreen::insertLinesAbsolute(int pos, unsigned int count)
+{
+	_content.insert(_content.begin()+pos, count, wxTerminalLine());
+}
+
+void wxTerminalScreen::insertLinesAtCarret(unsigned int count)
+{
+	insertLinesAbsolute(getCaretAbsolutePosition().y, count);
+}
+
 void wxTerminalScreen::moveCaret(int lines, int cols)
 {
 	_caretPosition.y += lines;
@@ -1035,7 +1050,10 @@ void wxTerminalCtrl::eraseScreen()
 		m_currentScreen->getLine(row).clear();
 }
 
-
+void wxTerminalCtrl::insertLines(unsigned int count)
+{
+	m_currentScreen->insertLinesAtCarret(count);
+}
 
 
 
@@ -1823,7 +1841,8 @@ void wxTerminalCtrl::onDECSEL(unsigned short nb)  // Erase in Line. 0 → Select
 
 void wxTerminalCtrl::onIL(unsigned short nb)  // Insert Ps Line(s) (default = 1)
 {
-	std::cout << "onIL " << nb << std::endl;
+	// std::cout << "onIL " << nb << std::endl;
+	insertLines(nb);
 }
 
 void wxTerminalCtrl::onDL(unsigned short nb)  // Delete Ps Line(s) (default = 1)

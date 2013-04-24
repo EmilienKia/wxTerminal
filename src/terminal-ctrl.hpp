@@ -177,6 +177,14 @@ public:
 	/** Overwrite a char at caret position and move caret by one.*/
 	void overwriteChar(wxUniChar c, const wxTerminalCharacterAttributes& attr);
 
+	/** Insert lines at specified position. */
+	void insertLines(int pos, unsigned int count = 1);
+	/** Insert lines at specified absolute position. */
+	void insertLinesAbsolute(int pos, unsigned int count = 1);
+	/** Insert lines at caret position. */
+	void insertLinesAtCarret(unsigned int count = 1);
+
+
 	/** Retrieve origin coordinates.*/
 	wxPoint getOrigin()const{return _originPosition;}
 	/** Move origin in history. */
@@ -361,6 +369,8 @@ public:
 	void eraseBelow();
 	/** Erase the screen.*/
 	void eraseScreen();
+	/** Insert lines at cursor position.*/
+	void insertLines(unsigned int count = 1);
 
 	
 	/** Test if shown screen is primary. */
