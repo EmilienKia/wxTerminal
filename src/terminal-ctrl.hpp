@@ -183,7 +183,12 @@ public:
 	void insertLinesAbsolute(int pos, unsigned int count = 1);
 	/** Insert lines at caret position. */
 	void insertLinesAtCarret(unsigned int count = 1);
-
+	/** Delete lines at specified position. */
+	void deleteLines(int pos, unsigned int count = 1);
+	/** Delete lines at specified absolute position. */
+	void deleteLinesAbsolute(int pos, unsigned int count = 1);
+	/** Delete lines at caret position. */
+	void deleteLinesAtCarret(unsigned int count = 1);
 
 	/** Retrieve origin coordinates.*/
 	wxPoint getOrigin()const{return _originPosition;}
@@ -371,7 +376,8 @@ public:
 	void eraseScreen();
 	/** Insert lines at cursor position.*/
 	void insertLines(unsigned int count = 1);
-
+	/** Delete lines at cursor position.*/
+	void deleteLines(unsigned int count = 1);
 	
 	/** Test if shown screen is primary. */
 	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}

@@ -236,6 +236,25 @@ void wxTerminalScreen::insertLinesAtCarret(unsigned int count)
 	insertLinesAbsolute(getCaretAbsolutePosition().y, count);
 }
 
+void wxTerminalScreen::deleteLines(int pos, unsigned int count)
+{
+	deleteLinesAbsolute(pos + _originPosition.y, count);
+}
+
+void wxTerminalScreen::deleteLinesAbsolute(int pos, unsigned int count)
+{
+	int end = pos + count;
+	if(end<_content.size())
+	   _content.erase(_content.begin()+pos, _content.begin()+end);
+	else
+	   _content.erase(_content.begin()+pos, _content.end());
+}
+
+void wxTerminalScreen::deleteLinesAtCarret(unsigned int count)
+{
+	deleteLinesAbsolute(getCaretAbsolutePosition().y, count);
+}
+
 void wxTerminalScreen::moveCaret(int lines, int cols)
 {
 	_caretPosition.y += lines;
@@ -1085,6 +1104,10 @@ void wxTerminalCtrl::insertLines(unsigned int count)
 	m_currentScreen->insertLinesAtCarret(count);
 }
 
+void wxTerminalCtrl::deleteLines(unsigned int count)
+{
+	m_currentScreen->deleteLinesAtCarret(count);
+}
 
 
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
@@ -1889,7 +1912,8 @@ void wxTerminalCtrl::onIL(unsigned short nb)  // Insert Ps Line(s) (default = 1)
 
 void wxTerminalCtrl::onDL(unsigned short nb)  // Delete Ps Line(s) (default = 1)
 {
-	NOT_IMPLEMENTED("DL " << nb);
+	TRACE("DL " << nb);
+	deleteLines(nb);
 }
 
 void wxTerminalCtrl::onDCH(unsigned short nb) // Delete Ps Character(s) (default = 1)
