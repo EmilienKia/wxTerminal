@@ -327,6 +327,16 @@ public:
 	void formFeed();
 	/** Process carriage return (0x0d). */
 	void carriageReturn();
+
+
+	/** Move the cursor up a specified number of rows.*/
+	void cursorUp(int count=1);
+	/** Move the cursor down a specified number of rows.*/
+	void cursorDown(int count=1);
+	/** Move the cursor left a specified number of columns.*/
+	void cursorLeft(int count=1);
+	/** Move the cursor right a specified number of columns.*/
+	void cursorRight(int count=1);
 	
 	
 	/** Test if shown screen is primary. */

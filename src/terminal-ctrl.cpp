@@ -940,6 +940,49 @@ void wxTerminalCtrl::carriageReturn()
 	m_currentScreen->setCaretColumn(0);
 }
 
+
+void wxTerminalCtrl::cursorUp(int count)
+{
+	if(count<0)
+		cursorDown(-count);
+	else if(count>0)
+	{
+		m_currentScreen->moveCaret(-count, 0);
+	}
+}
+
+void wxTerminalCtrl::cursorDown(int count)
+{
+	if(count<0)
+		cursorUp(-count);
+	else if(count>0)
+	{
+		m_currentScreen->moveCaret(count, 0);
+	}
+}
+
+void wxTerminalCtrl::cursorLeft(int count)
+{
+	if(count<0)
+		cursorRight(-count);
+	else if(count>0)
+	{
+		m_currentScreen->moveCaret(0, -count);
+	}
+}
+
+void wxTerminalCtrl::cursorRight(int count)
+{
+	if(count<0)
+		cursorLeft(-count);
+	else if(count>0)
+	{
+		m_currentScreen->moveCaret(0, count);
+	}
+}
+
+
+
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 {
 	wxCaretSuspend caretSuspend(this);
@@ -1361,8 +1404,8 @@ void wxTerminalCtrl::onBEL()  // 0x07
 
 void wxTerminalCtrl::onBS()   // 0x08 - BACK SPACE
 {
-	// TODO Is it enought ? Must I verify if in the first column ? Must I remove old content ?
-	m_currentScreen->moveCaret(0, -1);
+	// TODO Remove current char
+	cursorLeft();
 }
 
 void wxTerminalCtrl::onHT()   // 0x09
@@ -1611,22 +1654,26 @@ void wxTerminalCtrl::onICH(unsigned short nb) // Insert P s (Blank) Character(s)
 
 void wxTerminalCtrl::onCUU(unsigned short nb) // Cursor Up P s Times (default = 1)
 {
-	std::cout << "onCUU " << nb << std::endl;
+	// std::cout << "onCUU " << nb << std::endl;
+	cursorUp(nb);
 }
 
 void wxTerminalCtrl::onCUD(unsigned short nb) // Cursor Down P s Times (default = 1)
 {
-	std::cout << "onCUD " << nb << std::endl;
+	// std::cout << "onCUD " << nb << std::endl;
+	cursorDown(nb);
 }
 
 void wxTerminalCtrl::onCUF(unsigned short nb) // Cursor Forward P s Times (default = 1)
 {
-	std::cout << "onCUF " << nb << std::endl;
+	//std::cout << "onCUF " << nb << std::endl;
+	cursorRight(nb);
 }
 
 void wxTerminalCtrl::onCUB(unsigned short nb) // Cursor Backward P s Times (default = 1)
 {
-	std::cout << "onCUB " << nb << std::endl;
+	//std::cout << "onCUB " << nb << std::endl;
+	cursorLeft(nb);
 }
 
 void wxTerminalCtrl::onCNL(unsigned short nb) // Cursor Next Line P s Times (default = 1)
@@ -1639,12 +1686,12 @@ void wxTerminalCtrl::onCPL(unsigned short nb) // Cursor Preceding Line P s Times
 	std::cout << "onCPL " << nb << std::endl;
 }
 
-void wxTerminalCtrl::onCHA(unsigned short nb) // Moves the cursor to column n. -- Done
+void wxTerminalCtrl::onCHA(unsigned short nb) // Moves the cursor to column n.
 {
 // TODO	SetCaretPosition(nb - 1, GetCaretPosition().y);
 }
 
-void wxTerminalCtrl::onCUP(unsigned short row, unsigned short col) // Moves the cursor to row n, column m -- Done
+void wxTerminalCtrl::onCUP(unsigned short row, unsigned short col) // Moves the cursor to row n, column m
 {
 // TODO	SetCaretPosition(col - 1, row - 1);
 }
@@ -1655,7 +1702,7 @@ void wxTerminalCtrl::onCHT(unsigned short nb) // Cursor Forward Tabulation P s t
 }
 
 
-void wxTerminalCtrl::onED(unsigned short opt) // Clears part of the screen. -- Mostly done
+void wxTerminalCtrl::onED(unsigned short opt) // Clears part of the screen.
 {
 /*	wxPoint pos = GetCaretPosInBuffer();
 	if(opt==0) // Erase Below
