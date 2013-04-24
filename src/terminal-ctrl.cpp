@@ -36,7 +36,7 @@ using namespace std;
 //
 //
 
-wxTerminalCharacter wxTerminalCharacter::DefaultCharacter = { 0, 0, wxTCS_Invisible, 0 };
+wxTerminalCharacter wxTerminalCharacter::DefaultCharacter = { 0, { 7, 0, wxTCS_Invisible} };
 
 //
 //
@@ -995,6 +995,50 @@ void wxTerminalCtrl::setCursorPosition(int row, int col)
 
 
 
+
+void wxTerminalCtrl::eraseLeft()
+{
+	// NOTE probably remove characters instead of erasing them if line remaining is empty.
+	wxTerminalLine& line = m_currentScreen->getCurrentLine();
+	for(size_t col=0; col < m_currentScreen->getCaretAbsolutePosition().x; ++col)
+		line[col] = wxTerminalCharacter::DefaultCharacter;
+}
+
+void wxTerminalCtrl::eraseRight()
+{
+	m_currentScreen->getCurrentLine().resize(m_currentScreen->getCaretAbsolutePosition().x, wxTerminalCharacter::DefaultCharacter);
+}
+
+void wxTerminalCtrl::eraseLine()
+{
+	m_currentScreen->getCurrentLine().clear();
+}
+
+void wxTerminalCtrl::eraseAbove()
+{
+	for(size_t row=0; row<m_currentScreen->getCaretPosition().y; ++row)
+		m_currentScreen->getLine(row).clear();
+	eraseLeft();
+}
+
+void wxTerminalCtrl::eraseBelow()
+{
+	for(size_t row=m_currentScreen->getCaretPosition().y; row<m_consoleSize.y; ++row)
+		m_currentScreen->getLine(row).clear();
+	eraseRight();
+}
+
+void wxTerminalCtrl::eraseScreen()
+{
+	// TODO Should I scroll down instead of clear screen to keep screen in buffer ??
+	for(size_t row=0; row<m_consoleSize.y; ++row)
+		m_currentScreen->getLine(row).clear();
+}
+
+
+
+
+
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 {
 	wxCaretSuspend caretSuspend(this);
@@ -1433,19 +1477,19 @@ void wxTerminalCtrl::onLF()   // 0x0A - LINE FEED
 
 void wxTerminalCtrl::onVT()   // 0x0B - VERTICAL TAB
 {
-	std::cout << "onVT" << std::endl;
+	// std::cout << "onVT" << std::endl;
 	formFeed(); // Processed as LINE FEED
 }
 
 void wxTerminalCtrl::onFF()   // 0x0C
 {
-	std::cout << "onFF" << std::endl;
+	// std::cout << "onFF" << std::endl;
 	formFeed();
 }
 
 void wxTerminalCtrl::onCR()   // 0x0D - CARRIAGE RETURN -- Done
 {
-	SetChar(0x0D);
+	// SetChar(0x0D);
 	carriageReturn();
 }
 
@@ -1722,38 +1766,28 @@ void wxTerminalCtrl::onCHT(unsigned short nb) // Cursor Forward Tabulation P s t
 
 void wxTerminalCtrl::onED(unsigned short opt) // Clears part of the screen.
 {
-/*	wxPoint pos = GetCaretPosInBuffer();
-	if(opt==0) // Erase Below
+	switch(opt)
 	{
-std::cout << "Erase below" << std::endl;
-		m_currentContent->resize(pos.y+1);
+		case 0: // Erase Below
+			// std::cout << "Erase Below" << std::endl;
+			eraseBelow();
+			break;
+		case 1: // Erase Above
+			// std::cout << "Erase Above" << std::endl;
+			eraseAbove();
+			break;
+		case 2: // Erase All
+			// std::cout << "Erase All" << std::endl;
+			eraseScreen();
+			break;
+		case 3: // Erase Saved Lines (xterm)
+			// std::cout << "Erase Saved Lines (xterm)" << std::endl;
+			eraseScreen();
+			// TODO Erase buffered lines ??
+			break;
+		default:
+			break;
 	}
-	else if(opt==1) // Erase Above
-	{
-std::cout << "Erase above" << std::endl;
-		int top = ConsoleToHistoric(0);
-		for(; top<pos.y-1 ; ++top)
-		{
-			(*m_currentContent)[top].clear();
-		}
-	}
-	else if(opt==2) // Erase All
-	{
-std::cout << "Erase All" << std::endl;
-		for(int n=0; n<m_consoleSize.y; ++n)
-		{
-			m_currentContent->addNewLine();
-		}
-		UpdateScrollBars();
-		ScrollPages(1);
-		// TODO
-	}
-	else if(opt==3) // Erase Saved Lines (xterm)
-	{
-std::cout << "Erase saved lines (xterm)" << std::endl;
-		 // TODO
-	}
-*/
 }
 
 void wxTerminalCtrl::onDECSED(unsigned short opt)  // Erase in Display. 0 → Selective Erase Below (default). 1 → Selective Erase Above. 2 → Selective Erase All. 3 → Selective Erase Saved Lines (xterm).
@@ -1763,14 +1797,23 @@ void wxTerminalCtrl::onDECSED(unsigned short opt)  // Erase in Display. 0 → Se
 
 void wxTerminalCtrl::onEL(unsigned short opt) // Erases part of the line. -- Mostly done
 {
-/*	wxPoint pos = GetCaretPosInBuffer();
-	wxTerminalLine& line = m_currentContent->at(pos.y);
-	if(opt==0) // Clear caret and after
-		line.erase(line.begin()+pos.x, line.end());
-	else if(opt==1) // Clear caret and before
-		{} // TODO
-	else// Clear caret line
-		line.clear();*/
+	switch(opt)
+	{
+		case 0: // Erase Right
+			// std::cout << "Erase Right" << std::endl;
+			eraseRight();
+			break;
+		case 1: // Erase Left
+			// std::cout << "Erase Left" << std::endl;
+			eraseLeft();
+			break;
+		case 2: // Erase Line
+			// std::cout << "Erase Line" << std::endl;
+			eraseLine();
+			break;
+		default:
+			break;
+	}
 }
 
 void wxTerminalCtrl::onDECSEL(unsigned short nb)  // Erase in Line. 0 → Selective Erase to Right (default). 1 → Selective Erase to Left. 2 → Selective Erase All.

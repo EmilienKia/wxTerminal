@@ -97,17 +97,17 @@ public:
 	/**
 	 * Add an empty new line
 	 */
-	virtual void addNewLine();
+	void addNewLine();
 
 	/**
 	 * Ensure that the specified line is available in history, create it if needed.
 	 */
-	virtual void ensureHasLine(size_t l);
+	void ensureHasLine(size_t l);
 
 	/**
 	 * Ensure that the specified character is available in history, create it if needed.
 	 */
-	virtual void ensureHasChar(size_t l, size_t c);
+	void ensureHasChar(size_t l, size_t c);
 };
 
 
@@ -123,15 +123,21 @@ public:
 	/** Retrieve a line, from its screen position.*/
 	wxTerminalLine& getLine(int line){ return _content[line+_originPosition.y]; }
 	wxTerminalLine& operator[](int line){ return _content[line+_originPosition.y]; }
-	
-	/** Retrieve a line, from its screen position.*/
 	const wxTerminalLine& getLine(int line)const{ return _content[line+_originPosition.y]; }
 	const wxTerminalLine& operator[](int line)const{ return _content[line+_originPosition.y]; }
+
+	/** Retrieve a line, from its absolute position.*/
+	wxTerminalLine& getLineAbsolute(int line){ return _content[line]; }
+	const wxTerminalLine& getLineAbsolute(int line)const{ return _content[line]; }
 
 	/** Retrieve a char, from its screen position.*/
 	wxTerminalCharacter& getChar(int line, int col){ return getLine(line)[col+_originPosition.x]; }
 	/** Retrieve a char, from its screen position.*/
 	const wxTerminalCharacter& getChar(int line, int col)const{ return getLine(line)[col+_originPosition.x]; }
+
+	/** Retrieve the line of the caret.*/
+	wxTerminalLine& getCurrentLine(){ return _content[_caretPosition.y]; }
+	const wxTerminalLine& getCurrentLine()const{ return _content[_caretPosition.y]; }
 
 	/** Retrieve the number of rows in content buffer.*/
 	size_t getHistoryRowCount()const{return _content.size();}
@@ -141,6 +147,8 @@ public:
 
 	/** Retrieve the caret (textual cursor) position in relative coordinates. */
 	wxPoint getCaretPosition()const{return _caretPosition - _originPosition;}
+	/** Retrieve the caret (textual cursor) position in absolute coordinates. */
+	wxPoint getCaretAbsolutePosition()const{return _caretPosition;}
 	/** Set the caret (textual cursor) position (in relative coordinates). */
 	void setCaretPosition(wxPoint pos);
 	/** Set the caret (textual cursor) position (in absolute coordinates). */
@@ -340,6 +348,20 @@ public:
 	void setCursorColumn(int col);
 	/** Move the cursor to the specified position. */
 	void setCursorPosition(int row, int col);
+
+	/** Replace all characters to the left of the current cursor.*/
+	void eraseLeft();
+	/** Erase all characters to the left of the current cursor.*/
+	void eraseRight();
+	/** Erase the current line.*/
+	void eraseLine();
+	/** Erase all characters from the start of the screen to the current cursor position, regardless of scroll region.*/
+	void eraseAbove();
+	/** Erase all characters from the current cursor position to the end of the screen, regardless of scroll region.*/
+	void eraseBelow();
+	/** Erase the screen.*/
+	void eraseScreen();
+
 	
 	/** Test if shown screen is primary. */
 	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}
