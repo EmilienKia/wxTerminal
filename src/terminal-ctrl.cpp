@@ -981,6 +981,18 @@ void wxTerminalCtrl::cursorRight(int count)
 	}
 }
 
+void wxTerminalCtrl::setCursorColumn(int col)
+{
+	if(col<0)
+		col = 0;
+	m_currentScreen->setCaretColumn(col);
+}
+
+void wxTerminalCtrl::setCursorPosition(int row, int col)
+{
+	m_currentScreen->setCaretPosition(wxPoint(col, row));
+}
+
 
 
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
@@ -1678,22 +1690,28 @@ void wxTerminalCtrl::onCUB(unsigned short nb) // Cursor Backward P s Times (defa
 
 void wxTerminalCtrl::onCNL(unsigned short nb) // Cursor Next Line P s Times (default = 1)
 {
-	std::cout << "onCNL " << nb << std::endl;
+	// std::cout << "onCNL " << nb << std::endl;
+	cursorDown(nb);
+	setCursorColumn(0);
 }
 
 void wxTerminalCtrl::onCPL(unsigned short nb) // Cursor Preceding Line P s Times (default = 1)
 {
-	std::cout << "onCPL " << nb << std::endl;
+	// std::cout << "onCPL " << nb << std::endl;
+	cursorUp(nb);
+	setCursorColumn(0);
 }
 
 void wxTerminalCtrl::onCHA(unsigned short nb) // Moves the cursor to column n.
 {
-// TODO	SetCaretPosition(nb - 1, GetCaretPosition().y);
+	// std::cout << "onCHA " << nb << std::endl;
+	setCursorColumn(nb);
 }
 
 void wxTerminalCtrl::onCUP(unsigned short row, unsigned short col) // Moves the cursor to row n, column m
 {
-// TODO	SetCaretPosition(col - 1, row - 1);
+	// std::cout << "onCUP " << row << " - " << col << std::endl;
+	setCursorPosition(row-1, col-1);
 }
 
 void wxTerminalCtrl::onCHT(unsigned short nb) // Cursor Forward Tabulation P s tab stops (default = 1)

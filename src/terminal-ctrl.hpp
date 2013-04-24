@@ -183,7 +183,6 @@ public:
 
 	/** Move caret by specified cols and lines.*/
 	void moveCaret(int lines, int cols);
-
 	/** Move caret to specified col in current line. */
 	void setCaretColumn(int col);
 	
@@ -337,7 +336,10 @@ public:
 	void cursorLeft(int count=1);
 	/** Move the cursor right a specified number of columns.*/
 	void cursorRight(int count=1);
-	
+	/** Move the cursor to the specified column. */
+	void setCursorColumn(int col);
+	/** Move the cursor to the specified position. */
+	void setCursorPosition(int row, int col);
 	
 	/** Test if shown screen is primary. */
 	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}
