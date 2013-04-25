@@ -397,6 +397,12 @@ public:
 	/** Set up the default tab stops, starting from a given column. */
 	void setDefaultTabStops(int col = 0);
 	
+
+	/** Set one of the ANSI defined terminal mode bits. */
+	void setANSIMode(unsigned int mode, bool state);
+	/** Set one of the DEC private mode. */
+	void setDECMode(unsigned int mode, bool state);
+
 	
 	/** Test if shown screen is primary. */
 	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}

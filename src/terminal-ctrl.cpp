@@ -1180,6 +1180,19 @@ void wxTerminalCtrl::setDefaultTabStops(int col)
 
 
 
+
+void wxTerminalCtrl::setANSIMode(unsigned int mode, bool state)
+{
+	NOT_IMPLEMENTED("setANSIMode mode=" << mode << " state=" << state);
+}
+
+void wxTerminalCtrl::setDECMode(unsigned int mode, bool state)
+{
+	NOT_IMPLEMENTED("setDECMode mode=" << mode << " state=" << state);
+}
+
+
+
 void wxTerminalCtrl::OnPaint(wxPaintEvent& event)
 {
 	wxCaretSuspend caretSuspend(this);
@@ -2074,20 +2087,16 @@ void wxTerminalCtrl::onTBC(unsigned short nb)  // Tab Clear
 
 void wxTerminalCtrl::onSM(const std::vector<unsigned short> nbs)  // Set Mode
 {
-	NOT_IMPLEMENTED("SM");
-/*	std::cout << "onSM";
+	TRACE("SM");
 	for(size_t n=0; n<nbs.size(); ++n)
-		std::cout << " " << nbs[n];
-	std::cout << std::endl;*/
+		setANSIMode(nbs[n], true);
 }
 
 void wxTerminalCtrl::onDECSET(const std::vector<unsigned short> nbs)  // DEC Private Mode Set
 {
-	NOT_IMPLEMENTED("DECSET");
-/*	std::cout << "onDECSET";
+	TRACE("DECSET");
 	for(size_t n=0; n<nbs.size(); ++n)
-		std::cout << " " << nbs[n];
-	std::cout << std::endl;*/
+		setDECMode(nbs[n], true);
 }
 
 void wxTerminalCtrl::onMC(const std::vector<unsigned short> nbs)  // Media Copy
@@ -2110,20 +2119,16 @@ void wxTerminalCtrl::onDECMC(const std::vector<unsigned short> nbs)  // DEC spec
 
 void wxTerminalCtrl::onRM(const std::vector<unsigned short> nbs)  // Reset Mode
 {
-	NOT_IMPLEMENTED("RM");
-/*	std::cout << "onRM";
+	TRACE("RM");
 	for(size_t n=0; n<nbs.size(); ++n)
-		std::cout << " " << nbs[n];
-	std::cout << std::endl;*/
+		setANSIMode(nbs[n], false);
 }
 
 void wxTerminalCtrl::onDECRST(const std::vector<unsigned short> nbs)  // DEC Private Mode Reset
 {
-	NOT_IMPLEMENTED("DECRST");
-/*	std::cout << "onDECRST";
+	TRACE("DECRST");
 	for(size_t n=0; n<nbs.size(); ++n)
-		std::cout << " " << nbs[n];
-	std::cout << std::endl;*/
+		setDECMode(nbs[n], false);
 }
 
 void wxTerminalCtrl::onDSR(unsigned short nb)  // Device Status Report
