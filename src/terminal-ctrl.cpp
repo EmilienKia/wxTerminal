@@ -1183,7 +1183,24 @@ void wxTerminalCtrl::setDefaultTabStops(int col)
 
 void wxTerminalCtrl::setANSIMode(unsigned int mode, bool state)
 {
-	NOT_IMPLEMENTED("setANSIMode mode=" << mode << " state=" << state);
+	TRACE("setANSIMode mode=" << mode << " state=" << state);
+	switch(mode)
+	{
+	case 2: // Keyboard Action Mode (AM).
+		NOT_IMPLEMENTED("Keyboard Action Mode - KBD LOCKED");
+		break;
+	case 4: // Insert Mode (IRM).
+		insertMode(state);
+		break;
+	case 12: // Send/receive (SRM).
+		NOT_IMPLEMENTED("KeSend/receive (SRM)");
+		break;
+	case 20: // Automatic Newline (LNM).
+		autoCarriageReturn(state);
+		break;
+	default: // nrecognizedd ANSI mode.
+		break;
+	}
 }
 
 void wxTerminalCtrl::setDECMode(unsigned int mode, bool state)
