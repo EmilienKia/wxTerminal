@@ -121,6 +121,14 @@ _size(80, 25)
 {
 }
 
+void wxTerminalScreen::clear()
+{
+	_content.clear();
+	_originPosition = wxPoint(0, 0);
+	_caretPosition = wxPoint(0, 0);
+	// NOTE: Dont reset screen size.
+}
+
 void wxTerminalScreen::setChar(wxPoint pos, wxTerminalCharacter ch)
 {
 	_content.setChar(pos + _originPosition, ch);
@@ -1244,6 +1252,10 @@ void wxTerminalCtrl::setDECMode(unsigned int mode, bool state)
 	TRACE("setDECMode mode=" << mode << " state=" << state);
 	switch(mode)
 	{
+	case 47: // Use Alternate Screen Buffer / Use Normal Screen Buffer.
+	case 1047:
+		setAlternateMode(state);
+		break;
 	case 1048: // Save cursor as in DECSC / Restore cursor as in DECRC.
 		if(state)
 			saveState();
@@ -1254,11 +1266,12 @@ void wxTerminalCtrl::setDECMode(unsigned int mode, bool state)
 		if(state)
 		{
 			saveState();
-			// TODO Use Alternate Screen Buffer, clearing it first.
+			setAlternateMode(true);
+			m_alternateScreen->clear();
 		}
 		else
 		{
-			// TODO Use Normal Screen Buffer.
+			setAlternateMode(false);
 			restoreState();
 		}
 		break;
@@ -1284,7 +1297,14 @@ void wxTerminalCtrl::restoreState()
 	m_currentState = m_savedState;
 }
 
+void wxTerminalCtrl::setAlternateMode(bool alternate)
+{
+	m_currentScreen = alternate ? m_alternateScreen : m_primaryScreen;
 
+	// TODO WTF when terminal size has changed ?
+
+	Refresh();
+}
 
 
 

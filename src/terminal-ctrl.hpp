@@ -120,6 +120,9 @@ class wxTerminalScreen
 public:
 	wxTerminalScreen();
 
+	/** Clear the screen (and buffer). */
+	void clear();
+
 	/** Retrieve a line, from its screen position.*/
 	wxTerminalLine& getLine(int line){ return _content[line+_originPosition.y]; }
 	wxTerminalLine& operator[](int line){ return _content[line+_originPosition.y]; }
@@ -430,6 +433,9 @@ public:
 	void saveState();
 	/** Restore terminal state from saved state. */
 	void restoreState();
+	/** Set alternate mode.
+	 * @param alternate @true to use alternate screen and @false to use normal screen. */
+	void setAlternateMode(bool alternate);
 	
 	/** Test if shown screen is primary. */
 	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}
