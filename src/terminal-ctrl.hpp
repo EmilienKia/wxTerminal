@@ -335,29 +335,29 @@ public:
 
 	wxSize GetClientSizeInChars()const{return m_consoleSize;}
 
-	void wrapAround(bool val);
-	bool wrapAround()const {return getOption(wxTOF_WRAPAROUND);}
+	void setWrapAround(bool val);
+	bool getWrapAround()const {return getOption(wxTOF_WRAPAROUND);}
 
-	void reverseWrapAround(bool val);
-	bool reverseWrapAround()const {return getOption(wxTOF_REVERSE_WRAPAROUND);}
+	void setReverseWrapAround(bool val);
+	bool getReverseWrapAround()const {return getOption(wxTOF_REVERSE_WRAPAROUND);}
 
-	void originMode(bool val);
-	bool originMode()const {return getOption(wxTOF_ORIGINMODE);}
+	void setOriginMode(bool val);
+	bool getOriginMode()const {return getOption(wxTOF_ORIGINMODE);}
 
-	void autoCarriageReturn(bool val);
-	bool autoCarriageReturn()const {return getOption(wxTOF_AUTO_CARRIAGE_RETURN);}
+	void setAutoCarriageReturn(bool val);
+	bool getAutoCarriageReturn()const {return getOption(wxTOF_AUTO_CARRIAGE_RETURN);}
 
-	void cursorVisible(bool val);
-	bool cursorVisible()const {return getOption(wxTOF_CURSOR_VISIBLE);}
+	void setCursorVisible(bool val);
+	bool getCursorVisible()const {return getOption(wxTOF_CURSOR_VISIBLE);}
 
-	void cursorBlink(bool val);
-	bool cursorBlink()const {return getOption(wxTOF_CURSOR_BLINK);}
+	void setCursorBlink(bool val);
+	bool getCursorBlink()const {return getOption(wxTOF_CURSOR_BLINK);}
 
-	void insertMode(bool val);
-	bool insertMode()const {return getOption(wxTOF_INSERT_MODE);}
+	void setInsertMode(bool val);
+	bool getInsertMode()const {return getOption(wxTOF_INSERT_MODE);}
 
-	void reverseVideo(bool val);
-	bool reverseVideo()const {return getOption(wxTOF_REVERSE_VIDEO);}
+	void setReverseVideo(bool val);
+	bool getReverseVideo()const {return getOption(wxTOF_REVERSE_VIDEO);}
 
 	bool getOption(wxTerminalOptionFlags opt)const{return (m_options & (1 << opt)) != 0;}
 

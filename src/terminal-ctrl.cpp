@@ -935,21 +935,21 @@ void wxTerminalCtrl::GenerateFonts(const wxFont& font)
 }
 
 
-void wxTerminalCtrl::wrapAround(bool val)
+void wxTerminalCtrl::setWrapAround(bool val)
 {
 	m_options = (m_options & ~wxTOF_WRAPAROUND);
 	if(val)
 		m_options |=  wxTOF_WRAPAROUND;
 }
 
-void wxTerminalCtrl::reverseWrapAround(bool val)
+void wxTerminalCtrl::setReverseWrapAround(bool val)
 {
 	m_options = (m_options & ~wxTOF_REVERSE_WRAPAROUND);
 	if(val)
 		m_options |=  wxTOF_REVERSE_WRAPAROUND;
 }
 
-void wxTerminalCtrl::originMode(bool val)
+void wxTerminalCtrl::setOriginMode(bool val)
 {
 	m_options = (m_options & ~wxTOF_ORIGINMODE);
 	if(val)
@@ -959,14 +959,14 @@ void wxTerminalCtrl::originMode(bool val)
 	// setCursorPosition(0,0);
 }
 
-void wxTerminalCtrl::autoCarriageReturn(bool val)
+void wxTerminalCtrl::setAutoCarriageReturn(bool val)
 {
 	m_options = (m_options & ~wxTOF_AUTO_CARRIAGE_RETURN);
 	if(val)
 		m_options |=  wxTOF_AUTO_CARRIAGE_RETURN;
 }
 
-void wxTerminalCtrl::cursorVisible(bool val)
+void wxTerminalCtrl::setCursorVisible(bool val)
 {
 	m_options = (m_options & ~wxTOF_CURSOR_VISIBLE);
 	if(val)
@@ -975,7 +975,7 @@ void wxTerminalCtrl::cursorVisible(bool val)
 	// TODO
 }
 
-void wxTerminalCtrl::cursorBlink(bool val)
+void wxTerminalCtrl::setCursorBlink(bool val)
 {
 	m_options = (m_options & ~wxTOF_CURSOR_BLINK);
 	if(val)
@@ -984,14 +984,14 @@ void wxTerminalCtrl::cursorBlink(bool val)
 	// TODO
 }
 
-void wxTerminalCtrl::insertMode(bool val)
+void wxTerminalCtrl::setInsertMode(bool val)
 {
 	m_options = (m_options & ~wxTOF_INSERT_MODE);
 	if(val)
 		m_options |=  wxTOF_INSERT_MODE;
 }
 
-void wxTerminalCtrl::reverseVideo(bool val)
+void wxTerminalCtrl::setReverseVideo(bool val)
 {
 	m_options = (m_options & ~wxTOF_REVERSE_VIDEO);
 	if(val)
@@ -1016,7 +1016,7 @@ void wxTerminalCtrl::UpdateCaret()
 
 void wxTerminalCtrl::SetChar(wxUniChar c)
 {
-	if(insertMode())
+	if(getInsertMode())
 		m_currentScreen->insertChar(c, m_currentState.textAttributes);
 	else
 		m_currentScreen->overwriteChar(c, m_currentState.textAttributes);
@@ -1039,7 +1039,7 @@ void wxTerminalCtrl::lineFeed()
 
 void wxTerminalCtrl::formFeed()
 {
-	if(autoCarriageReturn())
+	if(getAutoCarriageReturn())
 		newLine();
 	else
 		lineFeed();
@@ -1233,13 +1233,13 @@ void wxTerminalCtrl::setANSIMode(unsigned int mode, bool state)
 		NOT_IMPLEMENTED("Keyboard Action Mode - KBD LOCKED");
 		break;
 	case 4: // Insert Mode (IRM).
-		insertMode(state);
+		setInsertMode(state);
 		break;
 	case 12: // Send/receive (SRM).
 		NOT_IMPLEMENTED("KeSend/receive (SRM)");
 		break;
 	case 20: // Automatic Newline (LNM).
-		autoCarriageReturn(state);
+		setAutoCarriageReturn(state);
 		break;
 	default: // Unrecognized ANSI mode.
 		std::cout << "Unrecognized ANSI mode=" << mode << " state=" << state << std::endl;
@@ -1252,6 +1252,24 @@ void wxTerminalCtrl::setDECMode(unsigned int mode, bool state)
 	TRACE("setDECMode mode=" << mode << " state=" << state);
 	switch(mode)
 	{
+	case 5: // Reverse Video (DECSCNM) /  Normal Video (DECSCNM).
+		setReverseVideo(state);
+		break;
+	case 6: // Origin Mode (DECOM) / Normal Cursor Mode (DECOM).
+		setOriginMode (state);
+		break;
+	case 7: // Wraparound Mode (DECAWM) / No Wraparound Mode (DECAWM).
+		setWrapAround(state);
+		break;
+	case 12: // Start Blinking Cursor (att610) / Stop Blinking Cursor (att610).
+		setCursorBlink(state);
+		break;
+	case 25: // Show Cursor (DECTCEM) / Hide Cursor (DECTCEM).
+		setCursorVisible(state);
+		break;
+	case 45: // Reverse-wraparound Mode / No Reverse-wraparound Mode.
+		setReverseWrapAround(state);
+		break;
 	case 47: // Use Alternate Screen Buffer / Use Normal Screen Buffer.
 	case 1047:
 		setAlternateMode(state);
