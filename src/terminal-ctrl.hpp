@@ -300,6 +300,25 @@ enum wxTerminalOptionFlags
 };
 
 
+struct wxTerminalState
+{
+	/** Cursor position. */
+	wxPoint cursorPos;
+
+	/** Character attributes. */
+	wxTerminalCharacterAttributes textAttributes;
+
+	/** G0...G3 character maps. */
+	const wxTerminalCharacterMap* Gx[4];
+
+	/** GL/GR character map index. Respectively 7-bit and 8-bit visible character set (values in 0...3). */
+	unsigned short GL, GR;
+
+	wxTerminalState();
+	wxTerminalState(const wxTerminalState& state);
+};
+
+
 class wxTerminalCtrl: public wxWindow, protected TerminalParser
 {
 	wxDECLARE_EVENT_TABLE();
@@ -398,11 +417,19 @@ public:
 	void setDefaultTabStops(int col = 0);
 	
 
-	/** Set one of the ANSI defined terminal mode bits. */
+	/** Set one of the ANSI defined terminal mode bits.
+	 * @param state @true to set (SM) and @false to reset (RM)*/
 	void setANSIMode(unsigned int mode, bool state);
-	/** Set one of the DEC private mode. */
+
+	/** Set one of the DEC private mode.
+	 * @param state @true to set (DECSET) and @false to reset (DECRST)*/
 	void setDECMode(unsigned int mode, bool state);
 
+
+	/** Save terminal state. */
+	void saveState();
+	/** Restore terminal state from saved state. */
+	void restoreState();
 	
 	/** Test if shown screen is primary. */
 	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}
@@ -622,13 +649,14 @@ private:
 
 	wxFont m_defaultFont, m_boldFont, m_underlineFont, m_boldUnderlineFont;
 	wxColour m_colours[8];
-	wxTerminalCharacterAttributes m_currentAttributes;
 
 	wxTerminalCharacterSet m_charset; // Current input character set
 	wxTerminalCharacterDecoder m_mbdecoder; // Multibyte decoder (for UTF-x) 
-	
-	const wxTerminalCharacterMap* m_Gx[4]; // G0...G3 character maps
-	unsigned short m_GL, m_GR; // Respectively 7-bit and 8-bit visible character set (values in 0...3).
+
+	/** Current and saved terminal state.
+	 * Note: cursor position in current state is not used, refer to currentScreen cursor position instead.
+	 */
+	wxTerminalState m_currentState, m_savedState;
 
 	unsigned int m_options; // Flags from wxTerminalOptionFlags
 

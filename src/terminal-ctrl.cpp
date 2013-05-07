@@ -770,6 +770,50 @@ const wxTerminalCharacterMap* wxTerminalCharacterMap::getMap(char id)
 
 //
 //
+// wxTerminalState
+//
+//
+
+wxTerminalState::wxTerminalState():
+cursorPos(0, 0)
+{
+	textAttributes.fore = 7;
+	textAttributes.back = 0;
+	textAttributes.style = wxTCS_Normal;
+
+	Gx[0] = wxTerminalCharacterMap::getMap('B');
+	Gx[1] = wxTerminalCharacterMap::getMap('0');
+	Gx[2] = wxTerminalCharacterMap::getMap('B');
+	Gx[3] = wxTerminalCharacterMap::getMap('B');
+
+	GL = 0;
+	GR = 0;
+
+	// TODO Set mouse report to disabled
+	// TODO Set selection to enabled
+}
+
+wxTerminalState::wxTerminalState(const wxTerminalState& state):
+cursorPos(state.cursorPos)
+{
+	textAttributes.fore = state.textAttributes.fore;
+	textAttributes.back = state.textAttributes.back;
+	textAttributes.style = state.textAttributes.style;
+
+	Gx[0] = state.Gx[0];
+	Gx[1] = state.Gx[1];
+	Gx[2] = state.Gx[2];
+	Gx[3] = state.Gx[3];
+
+	GL = state.GL;
+	GR = state.GR;
+
+	// TODO Set mouse report
+	// TODO Set selection
+}
+
+//
+//
 // wxTerminalCtrl
 //
 //
@@ -828,14 +872,7 @@ void wxTerminalCtrl::CommonInit()
 
 	// Default character set
 	m_charset = wxTCSET_UTF_8;
-	
-	// Default character maps
-	m_Gx[0] = wxTerminalCharacterMap::getMap('B');
-	m_Gx[1] = wxTerminalCharacterMap::getMap('0');
-	m_Gx[2] = wxTerminalCharacterMap::getMap('B');
-	m_Gx[3] = wxTerminalCharacterMap::getMap('B');
-	m_GL = m_GR = 0;
-	
+
 	m_colours[0]  = wxColour(0, 0, 0); // Normal black
 	m_colours[1]  = wxColour(255, 85, 85); // Bright red
 	m_colours[2] = wxColour(85, 255, 85); // Bright green
@@ -870,8 +907,6 @@ void wxTerminalCtrl::CommonInit()
 	GenerateFonts(wxFont(10, wxFONTFAMILY_TELETYPE));
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
 	SetBackgroundColour(m_colours[0]);
-
-	m_currentAttributes = {7, 0, wxTCS_Normal};
 
 	m_caret = new wxCaret(this, GetCharSize());
 	m_caret->Show();
@@ -974,9 +1009,9 @@ void wxTerminalCtrl::UpdateCaret()
 void wxTerminalCtrl::SetChar(wxUniChar c)
 {
 	if(insertMode())
-		m_currentScreen->insertChar(c, m_currentAttributes);
+		m_currentScreen->insertChar(c, m_currentState.textAttributes);
 	else
-		m_currentScreen->overwriteChar(c, m_currentAttributes);
+		m_currentScreen->overwriteChar(c, m_currentState.textAttributes);
 
 	// TODO add automatic scroll
 }
@@ -1198,15 +1233,58 @@ void wxTerminalCtrl::setANSIMode(unsigned int mode, bool state)
 	case 20: // Automatic Newline (LNM).
 		autoCarriageReturn(state);
 		break;
-	default: // nrecognizedd ANSI mode.
+	default: // Unrecognized ANSI mode.
+		std::cout << "Unrecognized ANSI mode=" << mode << " state=" << state << std::endl;
 		break;
 	}
 }
 
 void wxTerminalCtrl::setDECMode(unsigned int mode, bool state)
 {
-	NOT_IMPLEMENTED("setDECMode mode=" << mode << " state=" << state);
+	TRACE("setDECMode mode=" << mode << " state=" << state);
+	switch(mode)
+	{
+	case 1048: // Save cursor as in DECSC / Restore cursor as in DECRC.
+		if(state)
+			saveState();
+		else
+			restoreState();
+		break;
+	case 1049: //Save cursor as in DECSC and use Alternate Screen Buffer, clearing it first / Use Normal Screen Buffer and restore cursor as in DECRC.
+		if(state)
+		{
+			saveState();
+			// TODO Use Alternate Screen Buffer, clearing it first.
+		}
+		else
+		{
+			// TODO Use Normal Screen Buffer.
+			restoreState();
+		}
+		break;
+	default: // Unrecognized or unimplemented mode.
+		std::cout << "Unrecognized DEC mode=" << mode << " state=" << state << std::endl;
+		break;
+	}
 }
+
+
+
+
+
+void wxTerminalCtrl::saveState()
+{
+	m_savedState = m_currentState;
+	m_savedState.cursorPos = m_currentScreen->getCaretPosition();
+}
+
+void wxTerminalCtrl::restoreState()
+{
+	m_currentScreen->setCaretPosition(m_savedState.cursorPos);
+	m_currentState = m_savedState;
+}
+
+
 
 
 
@@ -1521,9 +1599,9 @@ void wxTerminalCtrl::onSCS(unsigned char id, unsigned char charset)
 {
 	TRACE("SCS id=" << id << " charset=" << charset);
 	if(id<4)
-		m_Gx[id] = wxTerminalCharacterMap::getMap(charset);
-	if(m_Gx[id]==NULL)
-		m_Gx[id] = &wxTerminalCharacterMap::us;
+		m_currentState.Gx[id] = wxTerminalCharacterMap::getMap(charset);
+	if(m_currentState.Gx[id]==NULL)
+		m_currentState.Gx[id] = &wxTerminalCharacterMap::us;
 }
 
 void wxTerminalCtrl::onDECBI() // Back Index, VT420 and up.
@@ -1533,12 +1611,14 @@ void wxTerminalCtrl::onDECBI() // Back Index, VT420 and up.
 
 void wxTerminalCtrl::onDECSC() // Save cursor
 {
-	NOT_IMPLEMENTED("DECSC");
+	TRACE("DECSC");
+	saveState();
 }
 
 void wxTerminalCtrl::onDECRC() // Restore cursor
 {
-	NOT_IMPLEMENTED("DECRC");
+	TRACE("DECRC");
+	restoreState();
 }
 
 void wxTerminalCtrl::onDECFI() // Forward Index, VT420 and up.
@@ -1564,31 +1644,31 @@ void wxTerminalCtrl::onRIS() // Full Reset
 void wxTerminalCtrl::onLS2() // Invoke the G2 Character Set as GL.
 {
 	TRACE("LS2");
-	m_GL = 2;
+	m_currentState.GL = 2;
 }
 
 void wxTerminalCtrl::onLS3() // Invoke the G3 Character Set as GL.
 {
 	TRACE("LS3");
-	m_GL = 3;
+	m_currentState.GL = 3;
 }
 
 void wxTerminalCtrl::onLS1R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
 	TRACE("LS1R");
-	m_GR = 1;
+	m_currentState.GR = 1;
 }
 
 void wxTerminalCtrl::onLS2R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
 	TRACE("LS2R");
-	m_GR = 2;
+	m_currentState.GR = 2;
 }
 
 void wxTerminalCtrl::onLS3R() // Invoke the G1 Character Set as GR (). Has no visible effect in xterm.
 {
 	TRACE("LS3R");
-	m_GR = 3;
+	m_currentState.GR = 3;
 }
 
 
@@ -1679,7 +1759,7 @@ void wxTerminalCtrl::onSO()   // 0x0E
 	TRACE("SO");
 	// Shift Out (SO), aka Lock Shift 0 (LS1).
 	// Invoke G1 character set in GL.
-	m_GL = 1;
+	m_currentState.GL = 1;
 }
 
 void wxTerminalCtrl::onSI()   // 0x0F
@@ -1687,7 +1767,7 @@ void wxTerminalCtrl::onSI()   // 0x0F
 	TRACE("SI");
     // Shift In (SI), aka Lock Shift 0 (LS0).
     // Invoke G0 character set in GL.
-	m_GL = 0;
+	m_currentState.GL = 0;
 }
 
 void wxTerminalCtrl::onDLE()  // 0x10
@@ -2162,37 +2242,37 @@ void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Grap
 		switch(sgr)
 		{
 		case 0: // Default
-			m_currentAttributes = {7, 0, wxTCS_Normal};
+			m_currentState.textAttributes = {7, 0, wxTCS_Normal};
 			break;
 		case 1: // Bold
-			m_currentAttributes.style |= wxTCS_Bold;
+			m_currentState.textAttributes.style |= wxTCS_Bold;
 			break;
 		case 4: // Underline
-			m_currentAttributes.style |= wxTCS_Underlined;
+			m_currentState.textAttributes.style |= wxTCS_Underlined;
 			break;
 		case 5: // Blink
-			m_currentAttributes.style |= wxTCS_Blink;
+			m_currentState.textAttributes.style |= wxTCS_Blink;
 			break;
 		case 7: // Inverse
-			m_currentAttributes.style |= wxTCS_Inverse;
+			m_currentState.textAttributes.style |= wxTCS_Inverse;
 			break;
 		case 8: // Invisible (hidden)
-			m_currentAttributes.style |= wxTCS_Invisible;
+			m_currentState.textAttributes.style |= wxTCS_Invisible;
 			break;
 		case 22: // Normal (neither bold nor faint)
-			m_currentAttributes.style &= ~wxTCS_Bold;
+			m_currentState.textAttributes.style &= ~wxTCS_Bold;
 			break;
 		case 24: // Not underlined
-			m_currentAttributes.style &= ~wxTCS_Underlined;
+			m_currentState.textAttributes.style &= ~wxTCS_Underlined;
 			break;
 		case 25: // Steady (not blinking)
-			m_currentAttributes.style &= ~wxTCS_Blink;
+			m_currentState.textAttributes.style &= ~wxTCS_Blink;
 			break;
 		case 27: // Positive (not inverse)
-			m_currentAttributes.style &= ~wxTCS_Inverse;
+			m_currentState.textAttributes.style &= ~wxTCS_Inverse;
 			break;
 		case 28: // Visible (not hidden)
-			m_currentAttributes.style &= ~wxTCS_Invisible;
+			m_currentState.textAttributes.style &= ~wxTCS_Invisible;
 			break;
 		case 30: // Foreground black
 		case 31: // Foreground red
@@ -2202,10 +2282,10 @@ void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Grap
 		case 35: // Foreground purple
 		case 36: // Foreground cyan
 		case 37: // Foreground white
-			m_currentAttributes.fore = sgr - 30; 
+			m_currentState.textAttributes.fore = sgr - 30;
 			break;
 		case 39: // Foreground default
-			m_currentAttributes.fore = 7;
+			m_currentState.textAttributes.fore = 7;
 			break;
 		case 40: // Background black
 		case 41: // Background red
@@ -2215,10 +2295,10 @@ void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Grap
 		case 45: // Background purple
 		case 46: // Background cyan
 		case 47: // Background white
-			m_currentAttributes.back = sgr - 40; 
+			m_currentState.textAttributes.back = sgr - 40;
 			break;
 		case 49: // ForegBackground default
-			m_currentAttributes.back = 0;
+			m_currentState.textAttributes.back = 0;
 			break;
 		default:
 			printf("ApplySGR %d\n", sgr);
