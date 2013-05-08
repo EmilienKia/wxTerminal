@@ -124,8 +124,8 @@ public:
 	void clear();
 
 	/** Retrieve a line, from its screen position.*/
-	wxTerminalLine& getLine(int line){ return _content[line+_originPosition.y]; }
-	wxTerminalLine& operator[](int line){ return _content[line+_originPosition.y]; }
+	wxTerminalLine& getLine(int line){ _content.ensureHasLine(line+_originPosition.y); return _content[line+_originPosition.y]; }
+	wxTerminalLine& operator[](int line){ _content.ensureHasLine(line+_originPosition.y); return _content[line+_originPosition.y]; }
 	const wxTerminalLine& getLine(int line)const{ return _content[line+_originPosition.y]; }
 	const wxTerminalLine& operator[](int line)const{ return _content[line+_originPosition.y]; }
 
