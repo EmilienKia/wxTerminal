@@ -100,14 +100,14 @@ public:
 	void addNewLine();
 
 	/**
-	 * Ensure that the specified line is available in history, create it if needed.
+	 * Retrieve reference to a specified line, ensuring it exists, creating it if needed.
 	 */
-	void ensureHasLine(size_t l);
+	wxTerminalLine& getLine(size_t line);
 
 	/**
-	 * Ensure that the specified character is available in history, create it if needed.
+	 * Retrieve a reference to a specified character, ensuring it exists, creating it if needed.
 	 */
-	void ensureHasChar(size_t l, size_t c);
+	wxTerminalCharacter& getChar(size_t line, size_t col);
 };
 
 
@@ -124,8 +124,8 @@ public:
 	void clear();
 
 	/** Retrieve a line, from its screen position.*/
-	wxTerminalLine& getLine(int line){ _content.ensureHasLine(line+_originPosition.y); return _content[line+_originPosition.y]; }
-	wxTerminalLine& operator[](int line){ _content.ensureHasLine(line+_originPosition.y); return _content[line+_originPosition.y]; }
+	wxTerminalLine& getLine(int line){ _content.getLine(line+_originPosition.y); }
+	wxTerminalLine& operator[](int line){ _content.getLine(line+_originPosition.y); }
 	const wxTerminalLine& getLine(int line)const{ return _content[line+_originPosition.y]; }
 	const wxTerminalLine& operator[](int line)const{ return _content[line+_originPosition.y]; }
 

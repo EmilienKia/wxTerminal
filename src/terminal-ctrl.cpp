@@ -76,13 +76,12 @@ wxTerminalCharacter wxTerminalCharacter::DefaultCharacter = { 0, { 7, 0, wxTCS_I
 
 void wxTerminalContent::setChar(wxPoint pos, wxTerminalCharacter c)
 {
-	ensureHasChar(pos.y, pos.x);
-	at(pos.y)[pos.x] = c;
+	getChar(pos.y, pos.x) = c;
 }
 
 void wxTerminalContent::insertChar(wxPoint pos, wxTerminalCharacter c)
 {
-	ensureHasChar(pos.y, pos.x);
+	getChar(pos.y, pos.x);
 	wxTerminalLine& line = at(pos.y);
 	line.insert(line.begin()+pos.x, c);
 }
@@ -92,20 +91,26 @@ void wxTerminalContent::addNewLine()
 	push_back(wxTerminalLine());
 }
 
-void wxTerminalContent::ensureHasLine(size_t l)
+wxTerminalLine& wxTerminalContent::getLine(size_t line)
 {
-	if(size()<=l)
-		resize(l+1);
+	// Ensure has line, create it if not.
+	if(size()<=line)
+		resize(line+1);
+
+	// Return the wanted line.
+	return at(line);
 }
 
-void wxTerminalContent::ensureHasChar(size_t l, size_t c)
+wxTerminalCharacter& wxTerminalContent::getChar(size_t line, size_t col)
 {
-	ensureHasLine(l);
-	
-	wxTerminalLine& line = at(l);
+	wxTerminalLine& ln = getLine(line);
 
-	if(line.size()<=c)
-		line.resize(c+1, wxTerminalCharacter::DefaultCharacter);
+	// Ensure the character exisits in the line, create it if not.
+	if(ln.size()<=col)
+		ln.resize(col+1, wxTerminalCharacter::DefaultCharacter);
+
+	// Return the wanted character.
+	return ln.at(col);
 }
 
 //
