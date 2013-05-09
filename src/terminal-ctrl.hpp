@@ -468,6 +468,9 @@ protected:
 	/** Update caret widget position. */
 	void UpdateCaret();
 	
+	/** Send some chars to shell. Same format as printf. */
+	void send(const char* msg, ...);
+	
 	/**
 	 * Declaration of TerminalParser interface abstract functions
 	 * \{ */

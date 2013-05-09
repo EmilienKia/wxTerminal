@@ -26,6 +26,7 @@
 #include <wx/event.h>
 
 #include <cstring>
+#include <cstdarg>
 using namespace std;
 
 #include "terminal-ctrl.hpp"
@@ -58,6 +59,16 @@ using namespace std;
 #define TRACE(content);
 
 #endif  // Tracing  feature activated
+
+
+//
+//
+// Predefined char sequences
+//
+//
+
+#define _ESC "\x1B"
+#define _CSI _ESC "["
 
 
 //
@@ -939,6 +950,15 @@ void wxTerminalCtrl::GenerateFonts(const wxFont& font)
 	m_boldUnderlineFont = m_boldFont.Underlined();
 }
 
+void wxTerminalCtrl::send(const char* msg, ...)
+{
+    va_list ap;
+    va_start(ap, msg);
+
+	char buffer[1024];
+	int sz = vsnprintf(buffer, 1024, msg, ap);
+	m_outputStream->Write(buffer, sz<0 ? 1024 : sz);
+}
 
 void wxTerminalCtrl::setWrapAround(bool val)
 {
@@ -1451,38 +1471,32 @@ void wxTerminalCtrl::OnChar(wxKeyEvent& event)
 		{
 			case WXK_UP:
 			{
-				static unsigned char cuu[] = {0x1B, 0x5B, 0x41};// CUrsor Up
-				m_outputStream->Write(cuu, 3);
+				send(_CSI"A"); // CUrsor Up
 				break;
 			}
 			case WXK_DOWN:
 			{
-				static unsigned char cud[] = {0x1B, 0x5B, 0x42};// CUrsor Down
-				m_outputStream->Write(cud, 3);
+				send(_CSI"B"); // CUrsor Down
 				break;
 			}
 			case WXK_LEFT:
 			{
-				static unsigned char cub[] = {0x1B, 0x5B, 0x44};// CUrsor Backward
-				m_outputStream->Write(cub, 3);
+				send(_CSI"D"); // CUrsor Backward
 				break;
 			}
 			case WXK_RIGHT:
 			{
-				static unsigned char cuf[] = {0x1B, 0x5B, 0x43};// CUrsor Foreward
-				m_outputStream->Write(cuf, 3);
+				send(_CSI"C"); // CUrsor Foreward
 				break;
 			}			
 			case WXK_PAGEUP:
 			{
-				static unsigned char su[] = {0x1B, 0x5B, 0x53};// Scroll Up
-				m_outputStream->Write(su, 3);
+				send(_CSI"S"); // Scroll Up
 				break;
 			}
 			case WXK_PAGEDOWN:
 			{
-				static unsigned char sd[] = {0x1B, 0x5B, 0x54};// Scroll Down
-				m_outputStream->Write(sd, 3);
+				send(_CSI"T"); // Scroll Down
 				break;
 			}
 			default:
@@ -2278,14 +2292,12 @@ void wxTerminalCtrl::onDSR(unsigned short nb)  // Device Status Report
 	{
 		case 5: // Status Report.
 		{
-			m_outputStream->Write("\x1b""0n", 3); // Result (‘‘OK’’) is CSI 0 n
+			send(_CSI"0n"); // Result (‘‘OK’’) is CSI 0 n
 			break;
 		}
 		case 6: // Report Cursor Position (CPR) [row;column]. Result is CSI r ; c R
 		{
-			char res[32];
-			snprintf(res, 32, "\033[%d;%dR", m_currentScreen->getCaretPosition().y+1, m_currentScreen->getCaretPosition().x+1);
-			m_outputStream->Write(res, 3);
+			send(_CSI"%d;%dR", m_currentScreen->getCaretPosition().y+1, m_currentScreen->getCaretPosition().x+1);
 			break;
 		}
 		default:
@@ -2375,33 +2387,31 @@ void wxTerminalCtrl::onDECDSR(unsigned short nb)  // DEC-specific Device Status 
 	{
 		case 6: // Report Cursor Position (CPR) [row;column]. Result is CSI r ; c R
 		{
-			char res[32];
-			snprintf(res, 32, "\033[%d;%dR", m_currentScreen->getCaretPosition().y+1, m_currentScreen->getCaretPosition().x+1);
-			m_outputStream->Write(res, 3);
+			send(_CSI"%d;%dR", m_currentScreen->getCaretPosition().y+1, m_currentScreen->getCaretPosition().x+1);
 			break;
 		}
 		case 15: // Report Printer status as CSI ? 1 0 n (ready) or CSI ? 1 1 n (not ready).
 		{
 			// TODO implement it ?!?
-			m_outputStream->Write("\x1b[?11n", 6);
+			send(_CSI"?11n");
 			break;
 		}
 		case 25: // Report UDK status as CSI ? 2 0 n (unlocked) or CSI ? 2 1 n (locked).
 		{
 			// TODO implement it ?!?
-			m_outputStream->Write("\x1b[?21n", 6);
+			send(_CSI"?21n");
 			break;
 		}
 		case 26: // Report Keyboard status as CSI ? 2 7 ; 1 ; 0 ; 0 n (North American).
 		{
 			// TODO implement it ?!?
-			m_outputStream->Write("\x1b[?12;1;0;0n", 12);
+			send(_CSI"?12;1;0;0n");
 			break;
 		}
 		case 53: // Report Locator status as CSI ? 5 3 n Locator available, if compiled-in, or CSI ? 5 0 n No Locator, if not.
 		{
 			// TODO implement it ?!?
-			m_outputStream->Write("\x1b[?50n", 6);
+			send(_CSI"?50n");
 			break;
 		}
 		case 62:
