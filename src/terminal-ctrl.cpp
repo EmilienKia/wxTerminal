@@ -2273,7 +2273,25 @@ void wxTerminalCtrl::onDECRST(const std::vector<unsigned short> nbs)  // DEC Pri
 
 void wxTerminalCtrl::onDSR(unsigned short nb)  // Device Status Report
 {
-	NOT_IMPLEMENTED("DSR " << nb);
+	TRACE("DSR " << nb);
+	switch(nb)
+	{
+		case 5: // Status Report.
+		{
+			m_outputStream->Write("\x1b""0n", 3); // Result (‘‘OK’’) is CSI 0 n
+			break;
+		}
+		case 6: // Report Cursor Position (CPR) [row;column]. Result is CSI r ; c R
+		{
+			char res[32];
+			snprintf(res, 32, "\033[%d;%dR", m_currentScreen->getCaretPosition().y+1, m_currentScreen->getCaretPosition().x+1);
+			m_outputStream->Write(res, 3);
+			break;
+		}
+		default:
+			std::cerr << "Unrecognized DSR " << nb << std::endl;
+			break;
+	}
 }
 
 void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Graphic Renditions -- In progress
@@ -2352,7 +2370,50 @@ void wxTerminalCtrl::onSGR(const std::vector<unsigned short> nbs) // Select Grap
 
 void wxTerminalCtrl::onDECDSR(unsigned short nb)  // DEC-specific Device Status Report
 {
-	NOT_IMPLEMENTED("DECDSR " << nb);
+	TRACE("DECDSR " << nb);
+	switch(nb)
+	{
+		case 6: // Report Cursor Position (CPR) [row;column]. Result is CSI r ; c R
+		{
+			char res[32];
+			snprintf(res, 32, "\033[%d;%dR", m_currentScreen->getCaretPosition().y+1, m_currentScreen->getCaretPosition().x+1);
+			m_outputStream->Write(res, 3);
+			break;
+		}
+		case 15: // Report Printer status as CSI ? 1 0 n (ready) or CSI ? 1 1 n (not ready).
+		{
+			// TODO implement it ?!?
+			m_outputStream->Write("\x1b[?11n", 6);
+			break;
+		}
+		case 25: // Report UDK status as CSI ? 2 0 n (unlocked) or CSI ? 2 1 n (locked).
+		{
+			// TODO implement it ?!?
+			m_outputStream->Write("\x1b[?21n", 6);
+			break;
+		}
+		case 26: // Report Keyboard status as CSI ? 2 7 ; 1 ; 0 ; 0 n (North American).
+		{
+			// TODO implement it ?!?
+			m_outputStream->Write("\x1b[?12;1;0;0n", 12);
+			break;
+		}
+		case 53: // Report Locator status as CSI ? 5 3 n Locator available, if compiled-in, or CSI ? 5 0 n No Locator, if not.
+		{
+			// TODO implement it ?!?
+			m_outputStream->Write("\x1b[?50n", 6);
+			break;
+		}
+		case 62:
+		case 63:
+		case 75:
+		case 85:
+			NOT_IMPLEMENTED("DECDSR" << nb);
+			break;
+		default:
+			std::cerr << "Unrecognized DECDSR " << nb << std::endl;
+			break;
+	}
 }
 
 void wxTerminalCtrl::onDECSTR()  // Soft terminal reset
