@@ -299,7 +299,10 @@ enum wxTerminalOptionFlags
 	wxTOF_CURSOR_VISIBLE,
 	wxTOF_CURSOR_BLINK,
 	wxTOF_INSERT_MODE,
-	wxTOF_REVERSE_VIDEO
+	wxTOF_REVERSE_VIDEO,
+
+	/** Enable/disable the application cursor mode. This changes the way cursor keys are sent from the keyboard. */
+	wxTOF_APPLICATION_CURSOR
 };
 
 
@@ -359,6 +362,9 @@ public:
 	void setReverseVideo(bool val);
 	bool getReverseVideo()const {return getOption(wxTOF_REVERSE_VIDEO);}
 
+	void setApplicationCursor(bool val);
+	bool getApplicationCursor()const {return getOption(wxTOF_APPLICATION_CURSOR);}
+	
 	bool getOption(wxTerminalOptionFlags opt)const{return (m_options & (1 << opt)) != 0;}
 
 	/** Process new line ('\n' character). */

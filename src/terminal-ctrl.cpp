@@ -1025,6 +1025,13 @@ void wxTerminalCtrl::setReverseVideo(bool val)
 	// TODO
 }
 
+void wxTerminalCtrl::setApplicationCursor(bool val)
+{
+	m_options = (m_options & ~wxTOF_APPLICATION_CURSOR);
+	if(val)
+		m_options |=  wxTOF_APPLICATION_CURSOR;
+}
+
 wxSize wxTerminalCtrl::GetCharSize(wxChar c)const
 {
 	wxSize sz;
@@ -1277,6 +1284,9 @@ void wxTerminalCtrl::setDECMode(unsigned int mode, bool state)
 	TRACE("setDECMode mode=" << mode << " state=" << state);
 	switch(mode)
 	{
+	case 1 : // Application Cursor Keys (DECCKM) / Normal Cursor Keys (DECCKM).
+		setApplicationCursor(state);
+		break;
 	case 5: // Reverse Video (DECSCNM) /  Normal Video (DECSCNM).
 		setReverseVideo(state);
 		break;
