@@ -41,7 +41,7 @@ IMPLEMENT_APP(MyApp)
 bool MyApp::OnInit()
 {
     wxFrame *frame = new wxFrame((wxFrame *)NULL, -1, wxT("wxTerminal"),
-                               wxPoint(50, 50), wxSize(450, 340));
+                               wxPoint(50, 50), wxSize(800, 600));
     wxSizer* gsz = new wxBoxSizer(wxVERTICAL);
     term = new wxTerminalCtrl(frame, wxID_ANY);
     gsz->Add(term, 1, wxEXPAND);
