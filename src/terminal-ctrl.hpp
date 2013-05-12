@@ -209,6 +209,9 @@ public:
 	void moveCaret(int lines, int cols);
 	/** Move caret to specified col in current line. */
 	void setCaretColumn(int col);
+	/** Move caret to specified row in current column. */
+	void setCaretRow(int row);
+	
 	
 protected:
 	/** Content of terminal screen, with potential history.*/
@@ -387,6 +390,8 @@ public:
 	void cursorRight(int count=1);
 	/** Move the cursor to the specified column. */
 	void setCursorColumn(int col);
+	/** Move the cursor to the specified row. */
+	void setCursorRow(int row);	
 	/** Move the cursor to the specified position. */
 	void setCursorPosition(int row, int col);
 

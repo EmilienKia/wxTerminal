@@ -316,6 +316,11 @@ void wxTerminalScreen::setCaretColumn(int col)
 	_caretPosition.x = col;
 }
 
+void wxTerminalScreen::setCaretRow(int row)
+{
+	getChar(row, getCaretPosition().x);
+	_caretPosition.y = row;
+}
 
 //
 //
@@ -1128,6 +1133,13 @@ void wxTerminalCtrl::setCursorColumn(int col)
 	if(col<0)
 		col = 0;
 	m_currentScreen->setCaretColumn(col);
+}
+
+void wxTerminalCtrl::setCursorRow(int row)
+{
+	if(row<0)
+		row = 0;
+	m_currentScreen->setCaretRow(row);
 }
 
 void wxTerminalCtrl::setCursorPosition(int row, int col)
@@ -2219,11 +2231,9 @@ void wxTerminalCtrl::onHPR(const std::vector<unsigned short> nbs)  // Character 
 
 void wxTerminalCtrl::onVPA(const std::vector<unsigned short> nbs)  // Line Position Absolute [row] (default = [1,column])
 {
-	NOT_IMPLEMENTED("VPA");
-/*	std::cout << "onVPA";
-	for(size_t n=0; n<nbs.size(); ++n)
-		std::cout << " " << nbs[n];
-	std::cout << std::endl;*/
+	TRACE("VPA");
+	if(nbs.size()>0)
+		setCursorRow(nbs[0]-1);
 }
 
 void wxTerminalCtrl::onVPR(const std::vector<unsigned short> nbs)  // Line Position Relative [rows] (default = [row+1,column]) (VPR)
