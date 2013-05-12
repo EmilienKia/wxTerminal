@@ -1037,6 +1037,13 @@ void wxTerminalCtrl::setApplicationCursor(bool val)
 		m_options |=  wxTOF_APPLICATION_CURSOR;
 }
 
+void wxTerminalCtrl::setApplicationKeypad(bool val)
+{
+	m_options = (m_options & ~wxTOF_APPLICATION_KEYPAD);
+	if(val)
+		m_options |=  wxTOF_APPLICATION_KEYPAD;
+}
+
 wxSize wxTerminalCtrl::GetCharSize(wxChar c)const
 {
 	wxSize sz;
@@ -1707,12 +1714,14 @@ void wxTerminalCtrl::onDECFI() // Forward Index, VT420 and up.
 
 void wxTerminalCtrl::onDECKPAM() // Application Keypad
 {
-	NOT_IMPLEMENTED("DECKPAM");
+	TRACE("DECKPAM");
+	setApplicationKeypad(true);
 }
 
 void wxTerminalCtrl::onDECKPNM() // Normal Keypad
 {
-	NOT_IMPLEMENTED("DECKPNM");
+	TRACE("DECKPNM");
+	setApplicationKeypad(false);
 }
 
 void wxTerminalCtrl::onRIS() // Full Reset

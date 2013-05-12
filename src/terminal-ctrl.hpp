@@ -305,7 +305,9 @@ enum wxTerminalOptionFlags
 	wxTOF_REVERSE_VIDEO,
 
 	/** Enable/disable the application cursor mode. This changes the way cursor keys are sent from the keyboard. */
-	wxTOF_APPLICATION_CURSOR
+	wxTOF_APPLICATION_CURSOR,
+	/** Enable/disable the application keypad mode. This change the way keypad keys are sent from keyboard. */
+	wxTOF_APPLICATION_KEYPAD
 };
 
 
@@ -367,6 +369,9 @@ public:
 
 	void setApplicationCursor(bool val);
 	bool getApplicationCursor()const {return getOption(wxTOF_APPLICATION_CURSOR);}
+
+	void setApplicationKeypad(bool val);
+	bool getApplicationKeypad()const {return getOption(wxTOF_APPLICATION_KEYPAD);}
 	
 	bool getOption(wxTerminalOptionFlags opt)const{return (m_options & (1 << opt)) != 0;}
 
