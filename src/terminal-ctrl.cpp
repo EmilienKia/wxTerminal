@@ -69,6 +69,7 @@ using namespace std;
 
 #define _ESC "\x1B"
 #define _CSI _ESC "["
+#define _SS3 _ESC "O"
 
 
 //
@@ -1475,8 +1476,83 @@ void wxTerminalCtrl::UpdateScrollBars()
 
 void wxTerminalCtrl::OnChar(wxKeyEvent& event)
 {
+	int key = event.GetKeyCode();
+	if(key != WXK_NONE)
+	{
+		bool shiftKey = event.ShiftDown();
+		bool ctrlKey  = event.ControlDown();
+		bool altKey   = event.AltDown();
+		bool metaKey  = event.MetaDown();
+
+		switch(key)
+		{
+			case WXK_UP: // CUrsor Up
+			{
+				if(!getApplicationKeypad() /* || shiftKey || ctrlKey || altKey || metaKey */)
+					send(_CSI"A");
+				else
+					send(_SS3"A");
+				return;
+			}
+			case WXK_DOWN: // CUrsor Down
+			{
+				if(!getApplicationKeypad() /* || shiftKey || ctrlKey || altKey || metaKey */)
+					send(_CSI"B");
+				else
+					send(_SS3"B");
+				return;
+			}
+			case WXK_RIGHT: // CUrsor Foreward
+			{
+				if(!getApplicationKeypad() /* || shiftKey || ctrlKey || altKey || metaKey */)
+					send(_CSI"C");
+				else
+					send(_SS3"C");
+				return;
+			}
+			case WXK_LEFT: // CUrsor Backward
+			{
+				if(!getApplicationKeypad() /* || shiftKey || ctrlKey || altKey || metaKey */)
+					send(_CSI"D");
+				else
+					send(_SS3"D");
+				return;
+			}
+			case WXK_PAGEUP: // Scroll Up
+			{
+				send(_CSI"S");
+				return;
+			}
+			case WXK_PAGEDOWN: // Scroll Down
+			{
+				send(_CSI"T");
+				break;
+			}
+			case WXK_HOME: // Home
+			{
+				if(!getApplicationKeypad())
+					send(_CSI"H");
+				else
+					send(_SS3"H");
+				return;
+			}
+			case WXK_END: // End
+			{
+				if(!getApplicationKeypad())
+					send(_CSI"F");
+				else
+					send(_SS3"F");
+				return;
+			}
+			default:
+			{
+				std::cout << "Key : " << key << std::endl;
+				break;
+			}
+		}
+	}
 	int c = event.GetUnicodeKey();
-	if( c != WXK_NONE)
+	if(c != WXK_NONE)
 	{
 		// Process special keys
 		if(c==WXK_RETURN)
@@ -1491,50 +1567,11 @@ void wxTerminalCtrl::OnChar(wxKeyEvent& event)
 			}
 			m_outputStream->PutC(c);
 		}
-		
 	}
-	else
+/*	else
 	{
-		int key = event.GetKeyCode();
-		switch(key)
-		{
-			case WXK_UP:
-			{
-				send(_CSI"A"); // CUrsor Up
-				break;
-			}
-			case WXK_DOWN:
-			{
-				send(_CSI"B"); // CUrsor Down
-				break;
-			}
-			case WXK_LEFT:
-			{
-				send(_CSI"D"); // CUrsor Backward
-				break;
-			}
-			case WXK_RIGHT:
-			{
-				send(_CSI"C"); // CUrsor Foreward
-				break;
-			}			
-			case WXK_PAGEUP:
-			{
-				send(_CSI"S"); // Scroll Up
-				break;
-			}
-			case WXK_PAGEDOWN:
-			{
-				send(_CSI"T"); // Scroll Down
-				break;
-			}
-			default:
-			{
-				std::cout << "Key : " << key << std::endl;
-				break;
-			}
-		}
-	}
+		// Should not occurs
+	}*/
 }
 
 
