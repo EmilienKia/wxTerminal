@@ -21,19 +21,18 @@
 #endif
 #include <wx/wx.h>
 
-#include <wx/process.h>
+
 
 #include "terminal-ctrl.hpp"
+#include "terminal-connector.hpp"
 
 class MyApp : public wxApp
 {
 public:
     virtual bool OnInit();
 
-    void execProcess();
-
-    wxProcess* process;
     wxTerminalCtrl* term;
+    wxTimerTerminalConnector connector;
 };
 
 IMPLEMENT_APP(MyApp)
@@ -49,20 +48,11 @@ bool MyApp::OnInit()
     frame->SetSizer(gsz);
     frame->Show(TRUE);
 
-    execProcess();
-    
+	connector.setTerminalCtrl(term);
+	connector.execute("bash --login -i");
+
     return TRUE;
 }
 
-void MyApp::execProcess()
-{
-    process = new wxProcess;
-    process->Redirect();
-    
-    long res = wxExecute("bash --login -i", wxEXEC_ASYNC/*|wxEXEC_HIDE_CONSOLE*/, process);
-    term->SetOutputStream(process->GetOutputStream());
-    term->SetInputStream(process->GetInputStream());
-    term->SetErrorStream(process->GetErrorStream());
-}
 
 

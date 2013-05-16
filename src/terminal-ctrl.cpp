@@ -30,6 +30,7 @@
 using namespace std;
 
 #include "terminal-ctrl.hpp"
+#include "terminal-connector.hpp"
 
 //
 //
@@ -856,14 +857,12 @@ wxBEGIN_EVENT_TABLE(wxTerminalCtrl, wxWindow)
 	EVT_SIZE(wxTerminalCtrl::OnSize)
 	EVT_SCROLLWIN(wxTerminalCtrl::OnScroll)
 	EVT_CHAR(wxTerminalCtrl::OnChar)
-	EVT_TIMER(wxID_ANY, wxTerminalCtrl::OnTimer)
 wxEND_EVENT_TABLE()
 
 wxTerminalCtrl::wxTerminalCtrl(wxWindow *parent, wxWindowID id, const wxPoint &pos,
     const wxSize &size, long style, const wxString &name):
 wxWindow(parent, id, pos, size, style|wxVSCROLL/*|wxHSCROLL*/, name),
-m_inputStream(NULL),
-m_outputStream(NULL),
+m_connector(NULL),
 m_primaryScreen(NULL),
 m_alternateScreen(NULL),
 m_currentScreen(NULL)
@@ -872,8 +871,7 @@ m_currentScreen(NULL)
 }
 
 wxTerminalCtrl::wxTerminalCtrl():
-m_inputStream(NULL),
-m_outputStream(NULL),
+m_connector(NULL),
 m_primaryScreen(NULL),
 m_alternateScreen(NULL),
 m_currentScreen(NULL)
@@ -943,9 +941,11 @@ void wxTerminalCtrl::CommonInit()
 
 	UpdateScrollBars();
 	UpdateCaret();
-	
-	m_timer = new wxTimer(this);
-	m_timer->Start(10);
+}
+
+void wxTerminalCtrl::setConnector(wxTerminalConnector* connector)
+{
+	m_connector = connector;
 }
 
 void wxTerminalCtrl::GenerateFonts(const wxFont& font)
@@ -958,12 +958,20 @@ void wxTerminalCtrl::GenerateFonts(const wxFont& font)
 
 void wxTerminalCtrl::send(const char* msg, ...)
 {
-    va_list ap;
-    va_start(ap, msg);
+	if(m_connector)
+	{
+		va_list ap;
+		va_start(ap, msg);
+		m_connector->vsend(msg, ap);
+	}
+}
 
-	char buffer[1024];
-	int sz = vsnprintf(buffer, 1024, msg, ap);
-	m_outputStream->Write(buffer, sz<0 ? 1024 : sz);
+void wxTerminalCtrl::send(char c)
+{
+	if(m_connector)
+	{
+		m_connector->send(c);
+	}
 }
 
 void wxTerminalCtrl::setWrapAround(bool val)
@@ -1558,15 +1566,12 @@ void wxTerminalCtrl::OnChar(wxKeyEvent& event)
 		if(c==WXK_RETURN)
 			c = wxT('\n');
 
-		if(m_outputStream!=NULL)
+		if(c<32)
 		{
-			if(c<32)
-			{
-				if(c!=0x08 && c!=0x0A && c!=0x0D) // Backspace or Line feed or Cariage return
-					printf("Enter C0 code : %02x\n", c);
-			}
-			m_outputStream->PutC(c);
+			if(c!=0x08 && c!=0x0A && c!=0x0D) // Backspace or Line feed or Cariage return
+				printf("Enter C0 code : %02x\n", c);
 		}
+		send(c);
 	}
 /*	else
 	{
@@ -1574,52 +1579,7 @@ void wxTerminalCtrl::OnChar(wxKeyEvent& event)
 	}*/
 }
 
-
-//
-// Treatment of inputs and outputs 
-//
-
-void wxTerminalCtrl::OnTimer(wxTimerEvent& event)
-{
-	if(m_inputStream)
-	{
-		if(m_inputStream->CanRead())
-		{
-			unsigned char buffer[256];
-			while(true)
-			{
-				m_inputStream->Read(buffer, 256);
-				size_t sz = m_inputStream->LastRead();
-				Append(buffer, sz);
-				if(sz<256)
-					break;
-			}
-
-			UpdateScrollBars();
-			Refresh();
-		}
-	}
-	if(m_errorStream)
-	{
-		if(m_errorStream->CanRead())
-		{
-			unsigned char buffer[256];
-			while(true)
-			{
-				m_errorStream->Read(buffer, 256);
-				size_t sz = m_errorStream->LastRead();
-				Append(buffer, sz);
-				if(sz<256)
-					break;
-			}
-
-			UpdateScrollBars();
-			Refresh();
-		}
-	}
-}
-
-void wxTerminalCtrl::Append(const unsigned char* buff, size_t sz)
+void wxTerminalCtrl::append(const unsigned char* buff, size_t sz)
 {
 	if(buff && sz>0)
 	{
@@ -1627,6 +1587,8 @@ void wxTerminalCtrl::Append(const unsigned char* buff, size_t sz)
 		{
 			Process(buff[n]);
 		}
+		UpdateScrollBars();
+		Refresh();
 	}
 }
 

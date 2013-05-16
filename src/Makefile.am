@@ -20,7 +20,9 @@ wxterminal_SOURCES = \
 	terminal-ctrl.hpp     \
 	terminal-ctrl.cpp     \
 	terminal-parser.cpp     \
-	terminal-parser.hpp
+	terminal-parser.hpp     \
+	terminal-connector.cpp     \
+	terminal-connector.hpp
 
 wxterminal_LDFLAGS = 
 

@@ -31,6 +31,7 @@ extern wxString wxTerminalCtrlNameStr;
 struct wxTerminalCharacter;
 class wxTerminalContent;
 class wxTerminalCtrl;
+class wxTerminalConnector;
 
 /**
  * Character presentational style.
@@ -341,7 +342,13 @@ public:
     virtual bool Create(wxWindow *parent, wxWindowID id, const wxPoint &pos=wxDefaultPosition,
         const wxSize &size=wxDefaultSize, long style=0, const wxString &name=wxTerminalCtrlNameStr);
 
+	void setConnector(wxTerminalConnector* connector);
+	wxTerminalConnector* getConnector(){return m_connector;}
+
 	wxSize GetClientSizeInChars()const{return m_consoleSize;}
+
+	void append(const unsigned char* buff, size_t sz);
+
 
 	void setWrapAround(bool val);
 	bool getWrapAround()const {return getOption(wxTOF_WRAPAROUND);}
@@ -456,24 +463,9 @@ public:
 	/** Test if shown screen is primary. */
 	bool isPrimaryScreen()const {return m_currentScreen==m_primaryScreen;}
 	
-	// Output stream where send user input.
-	wxOutputStream* GetOutputStream()const{return m_outputStream;}
-	void SetOutputStream(wxOutputStream* out){m_outputStream = out;}
-
-	// Input stream from where get shown data.
-	void SetInputStream(wxInputStream* in){m_inputStream = in;}
-	wxInputStream* GetInputStream()const{return m_inputStream;}
-
-	// Error stream from where get shown data.
-	void SetErrorStream(wxInputStream* err){m_errorStream = err;}
-	wxInputStream* GetErrorStream()const{return m_errorStream;}
-
-	
 protected:
 	void CommonInit();
 	wxSize GetCharSize(wxChar c = wxT('0'))const;
-
-	void Append(const unsigned char* buff, size_t sz);
 
 	/** Set a character at the specified position (console coordinates). */
 	void SetChar(wxUniChar c);
@@ -484,8 +476,10 @@ protected:
 	/** Update caret widget position. */
 	void UpdateCaret();
 	
-	/** Send some chars to shell. Same format as printf. */
+	/** Send some chars to the shell. Same format as printf. */
 	void send(const char* msg, ...);
+	/** Send a chars to the shell. */
+	void send(char c);;
 	
 	/**
 	 * Declaration of TerminalParser interface abstract functions
@@ -656,6 +650,8 @@ protected:
 	/** \} */
 	
 private:
+	wxTerminalConnector* m_connector;
+
 	wxTerminalScreen* m_primaryScreen;
 	wxTerminalScreen* m_alternateScreen;
 	wxTerminalScreen* m_currentScreen;
@@ -687,11 +683,7 @@ private:
 
 	unsigned int m_tabWidth; // Size of tab in chars
 	std::set<unsigned int> m_tabstops; // Set of tabstops
-	
-	wxTimer* m_timer;    // Timer for i/o treatments.
-	wxOutputStream* m_outputStream;
-	wxInputStream*  m_inputStream;
-	wxInputStream*  m_errorStream;
+
 };
 
 #endif // _TERMINAL_CTRL_HPP_
